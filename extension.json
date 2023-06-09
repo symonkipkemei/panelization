@@ -1,0 +1,14 @@
+{
+    "builtin": "False",
+    "default_enabled": "True",
+    "type": "extension",
+    "rocket_mode_compatible": "False",
+    "name": "djenga",
+    "description": "Automating the panelization process",
+    "author": "Symon Kipkemei",
+    "author_profile": "https://github.com/symonkipkemei",
+    "url": "https://github.com/symonkipkemei/panelization.git",
+    "website": "https://github.com/symonkipkemei",
+    "image": "",
+    "dependencies": []
+}

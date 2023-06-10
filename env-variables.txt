@@ -1,3 +1,2 @@
-/venv38
-/.idea
-
+C:/Users/HP/.vscode/ironpython-stubs-master/release/stubs.min
+C:/Users/HP/.vscode/pyRevit-master/pyrevitlib

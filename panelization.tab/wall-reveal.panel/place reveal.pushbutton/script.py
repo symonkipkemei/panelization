@@ -1,4 +1,4 @@
-#! python3
+
 
 # METADATA
 ################################################################################################################################
@@ -42,17 +42,19 @@ __max_revit_ver__ = 2022
 
 
 # regular
+import  random
 
-from tabulate import tabulate
 # Autodesk
 from Autodesk.Revit.DB import *
 from Autodesk.Revit.DB import Transaction, Element, ElementId, FilteredElementCollector
+from Autodesk.Revit.DB.Structure import  StructuralType
 
 # pyrevit
 
 
 # custom ( Remember to include the csutom lib package to the pythonpath)
 
+from _create import _annotations as an
 
 # .NET imports ( I have no idea why I am importing this)
 import clr
@@ -79,26 +81,63 @@ active_level = doc.ActiveView.GenLevel
 
 
 
-# custom variable
+def place_reveal():
+
+    # create a new  wall sweep
+    tmp = """
+    public static WallSweep Create(
+	Wall wall,
+	ElementId wallSweepType,
+	WallSweepInfo wallSweepInfo
+    )
+    """
+
+    # get part
+    part = doc.GetElement(ElementId(478665))
+    print(part)
+
+    # get symbol
+    wallSweepType = WallSweepType.Reveal
+    wallSweepTypeId = ElementId(352808)
+
+    wallSweepInfo = WallSweepInfo(wallSweepType, True)
+    wallSweepInfo.CutsWall = True
+    wallSweepInfo.Distance = 3
+
+
+    wall_sweep = WallSweep.Create(part, wallSweepTypeId, wallSweepInfo)
+    info = wall_sweep.GetWallSweepInfo()
+    print (info.WallOffset)
 
 
 
-# FUNCTION AND CLASSES
-################################################################################################################################
 
-Transaction(doc).Start()
+def copy_element(element_id):
 
-# creating elements
 
-# method 1 - go into that class you would like to create (revitapi)
-# i.e creating a text note
+    tmp = """
+    public static ICollection<ElementId> CopyElement(
+	Document document,
+	ElementId elementToCopy,
+	XYZ translation
+    )
+    """
 
-position = XYZ(0, 0, 0)
-text = "Hello symon kipkemei"
-text_typeId = FilteredElementCollector(doc).OfClass(TextNoteType).FirstElementId()
-TextNote.Create(doc, active_view.Id, position, text, text_typeId)
+    ElementTransformUtils.CopyElement(doc)
 
-# Transaction guards any changes made to the revit Model
-Transaction(doc).Commit()
 
-# create a wall from a set  of points
+
+if __name__ == "__main__":
+    try:
+        with Transaction(doc, __title__) as t:
+            t.Start()
+
+            # place function here
+            place_reveal()
+
+            t.Commit()
+    except Exception as e:
+        print ('The following error has occurred: {}'.format(e))
+
+
+

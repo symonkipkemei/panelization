@@ -40,6 +40,8 @@ __max_revit_ver__ = 2022
 
 
 # regular
+from __future__ import division
+
 import random
 
 # Autodesk
@@ -159,12 +161,33 @@ def get_edge_index(part):
         return None
 
 
+
+
 def get_panel_position(left_edge, right_edge):
     # place reveal at correct position
+    part_length = left_edge - right_edge
     panel_size = 3.927083
-    new_reveal_distance = left_edge - panel_size
+    half_panel_size = panel_size / 2
 
-    return new_reveal_distance
+    no_complete_panels = int(part_length // panel_size)
+    incomplete_panel_length = part_length % panel_size
+
+    reveal_indexes = []
+
+    if incomplete_panel_length == 0:
+        for x in range(0, no_complete_panels):
+            left_edge -= panel_size
+            reveal_indexes.append(left_edge)
+    else:
+        # If there is an incomplete panel half the panel before the last reveal
+        for x in range(0, (no_complete_panels - 1)):
+            left_edge -= panel_size
+            reveal_indexes.append(left_edge)
+        left_edge -= half_panel_size
+        reveal_indexes.append(left_edge)
+
+    # check if there is a remainder
+    return reveal_indexes
 
 
 def auto_panel(host_wall_id, new_reveal_distance):
@@ -192,4 +215,5 @@ def main():
 
 if __name__ == "__main__":
     # print(get_part_length(496067))
-    main()
+    #main()
+    get_panel_position(12, -3)

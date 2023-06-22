@@ -1,117 +1,81 @@
 
-def create_curve():
-    """creating a new detail line"""
-    # create a geometry curve
-    temp = """
-                public static Line CreateBound(
-            	XYZ endpoint1,
-            	XYZ endpoint2
-                )"""
-    endpoint1 = XYZ(0, 1, 0)
-    endpoint2 = XYZ(0, 100, 0)
+# regular
+import  random
 
-    geometryCurve = Line.CreateBound(endpoint1, endpoint2)
+# Autodesk
+from Autodesk.Revit.DB import *
+from Autodesk.Revit.DB import Transaction, Element, ElementId, FilteredElementCollector
+from Autodesk.Revit.DB.Structure import StructuralType
+from Autodesk.Revit.UI.Selection import ObjectType
+# pyrevit
 
-    # create new detail curve
 
-    temp = """
-                    public DetailCurve NewDetailCurve(
-                	View view,
-                	Curve geometryCurve
-                    )"""
+# custom ( Remember to include the csutom lib package to the pythonpath)
 
-    view = active_view
+from _create import _model as m
 
-    doc.Create.NewDetailCurve(view, geometryCurve)
+# .NET imports ( I have no idea why I am importing this)
+import clr
 
-def create_random_wall():
-    """Creates a new rectangular profile wall within the project using the specified wall type, height, and offset."""
+clr.AddReference("System")
+from System.Collections.Generic import \
+    List  # List<ElementType>() <-it's special type of list that RevitAPI often requires
 
-    temp = """
-    public static Wall Create(
-	Document document,
-	Curve curve,
-	ElementId wallTypeId,
-	ElementId levelId,
-	double height,
-	double offset,
-	bool flip,
-	bool structural
+# VARIABLES
+################################################################################################################################
+
+
+# instance variables from revitAPI
+
+
+# __revit__  used to create an instance
+app = __revit__.Application  # represents the Revit Autodesk Application
+doc = __revit__.ActiveUIDocument.Document  # obj used to create new instances of elements within the active project
+uidoc = __revit__.ActiveUIDocument  # obj that represent the current active project
+
+# create
+active_view = doc.ActiveView
+active_level = doc.ActiveView.GenLevel
+
+def place_reveal(host_wall_id,variable_distance):
+
+    # create a new  wall sweep
+    tmp = """
+    public static WallSweep Create(
+	Wall wall,
+	ElementId wallSweepType,
+	WallSweepInfo wallSweepInfo
     )
     """
-    endpoint1 = XYZ(0, 1, 0)
-    endpoint2 = XYZ(0, 100, 0)
-    curve = Line.CreateBound(endpoint1, endpoint2)
-    wallTypeId = 9756
-    levelId = active_level.Id
-    Wall.Create(doc,curve,wallTypeId,levelId,3000,0,True,True)
+
+    # get part, this is the hosted element containing the part
+    wall = doc.GetElement(host_wall_id)
+    # get symbol
+    wallSweepType = WallSweepType.Reveal
+    wallSweepTypeId = ElementId(352808)
+
+    wallSweepInfo = WallSweepInfo(wallSweepType, True)
+    wallSweepInfo.CutsWall = True
+    wallSweepInfo.Distance = variable_distance
+    wallSweepInfo.WallSide = WallSide.Exterior
+    wallSweepInfo.DistanceMeasuredFrom = DistanceMeasuredFrom.Base
+    wall_sweep = WallSweep.Create(wall, wallSweepTypeId, wallSweepInfo)
+
+    return wall_sweep
 
 
-def create_rectangular_wall():
+def get_host_wall_id(part):
     """
-    Creates a new rectangular profile wall within the project using the default wall style.
+    Returns the host wall id when a par element is selected
+
+    :param part_element_id:
+    :return:
     """
 
-    temp = """
-    public static Wall Create(
-	Document document,
-	Curve curve,
-	ElementId levelId,
-	bool structural
-    )"""
+    tmp = """public ICollection<LinkElementId> GetSourceElementIds()"""
+    linkedElementIdCollection = part.GetSourceElementIds()
 
-    endpoint1 = XYZ(0, 1, 0)
-    endpoint2 = XYZ(0, 100, 0)
-    curve = Line.CreateBound(endpoint1, endpoint2)
-    level_id = active_level.Id
+    host_wall_id = linkedElementIdCollection[0].HostElementId  # pick first linkedelement in collection
 
-    Wall.Create(doc,curve,level_id,True)
+    return  host_wall_id
 
-
-def place_window():
-    temp = """
-    public FamilyInstance NewFamilyInstance(
-	XYZ location,
-	FamilySymbol symbol,
-	Element host,
-	StructuralType structuralType
-    )"""
-    endpoint1 = XYZ(0, 1, 0)
-    endpoint2 = XYZ(0, 100, 0)
-    endpoint3 = (endpoint2 + endpoint1) /2
-
-
-    host_wall = doc.GetElement(ElementId(285382))
-    print ("host wall", host_wall)
-
-
-    window_type = FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_Windows)\
-        .WhereElementIsElementType().FirstElement()
-    window = doc.Create.NewFamilyInstance(endpoint3, window_type, host_wall, StructuralType.NonStructural)
-
-
-
-def get_symbol(f_param_value):
-    # define parameters
-    param_type = ElementId(BuiltInParameter.ALL_MODEL_TYPE_NAME)
-    print (param_type)
-    param_family = ElementId(BuiltInParameter.ALL_MODEL_FAMILY_NAME)
-    print (param_family)
-
-    # Create a rule
-    # f_param_value = "TYPE NAME HERE"
-    f_param = ParameterValueProvider(param_type)
-    evaluator = FilterStringEquals()
-
-    f_rule = FilterStringRule(f_param, evaluator, f_param_value, True)
-
-    #create a filter
-    filter_type_name = ElementParameterFilter(f_rule)
-
-    #Get elements
-    element_by_type = FilteredElementCollector(doc)\
-                        .WherePasses(filter_type_name)\
-                        .WhereElementIsNotElementType()\
-                        .ToElements()
-
-    return element_by_type

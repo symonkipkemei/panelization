@@ -87,7 +87,7 @@ def main():
     part = uidoc.Document.GetElement(reference)
     #get host id from
     host_wall_id = m.get_host_wall_id(part)
-    variable_distance = 0
+    variable_distance = 3
 
     try:
         with Transaction(doc, __title__) as t:

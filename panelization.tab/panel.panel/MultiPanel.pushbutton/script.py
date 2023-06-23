@@ -1,3 +1,4 @@
+from __future__ import division
 # METADATA
 ################################################################################################################################
 
@@ -40,7 +41,7 @@ __max_revit_ver__ = 2022
 
 
 # regular
-from __future__ import division
+
 
 import random
 
@@ -163,11 +164,11 @@ def get_edge_index(part):
 
 
 
-def get_panel_position(left_edge, right_edge):
+def get_reveal_indexes(left_edge, right_edge):
     # place reveal at correct position
     part_length = left_edge - right_edge
-    panel_size = 3.927083
-    half_panel_size = panel_size / 2
+    panel_size = 3.927083 #3' 11 1/8"
+    half_panel_size = 1.927083 #1' 11 1/8"
 
     no_complete_panels = int(part_length // panel_size)
     incomplete_panel_length = part_length % panel_size
@@ -178,7 +179,8 @@ def get_panel_position(left_edge, right_edge):
         for x in range(0, no_complete_panels):
             left_edge -= panel_size
             reveal_indexes.append(left_edge)
-    else:
+
+    elif incomplete_panel_length > 4:
         # If there is an incomplete panel half the panel before the last reveal
         for x in range(0, (no_complete_panels - 1)):
             left_edge -= panel_size
@@ -186,17 +188,27 @@ def get_panel_position(left_edge, right_edge):
         left_edge -= half_panel_size
         reveal_indexes.append(left_edge)
 
+    elif incomplete_panel_length < 4:
+        # If there is an incomplete panel half the panel before the last reveal
+        for x in range(0, no_complete_panels):
+            left_edge -= panel_size
+            reveal_indexes.append(left_edge)
+
+    else:
+        print ("The incomplete panel length is unknown or faulty")
+
     # check if there is a remainder
     return reveal_indexes
 
 
-def auto_panel(host_wall_id, new_reveal_distance):
+def auto_panel(host_wall_id, reveal_indexes):
     # place new reveal
     try:
         with Transaction(doc, __title__) as t:
             t.Start()
 
-            wall_sweep = place_reveal(host_wall_id, new_reveal_distance)
+            for reveal_index in reveal_indexes:
+                wall_sweep = place_reveal(host_wall_id, reveal_index)
 
             t.Commit()
     except Exception as e:
@@ -207,13 +219,11 @@ def main():
     part = get_part()
     host_wall_id = get_host_wall_id(part)
     left_edge_index, right_edge_index = get_edge_index(part)
-    print ("left edge index", left_edge_index, "right edge index", right_edge_index)
-    panel_position = get_panel_position(left_edge_index, right_edge_index)
+    reveal_indexes = get_reveal_indexes(left_edge_index, right_edge_index)
 
-    auto_panel(host_wall_id, panel_position)
+    auto_panel(host_wall_id, reveal_indexes)
 
 
 if __name__ == "__main__":
     # print(get_part_length(496067))
-    #main()
-    get_panel_position(12, -3)
+    main()

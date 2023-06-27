@@ -58,7 +58,7 @@ The project was developed in (windows environment) .
 
 **simple steps to set up on your local machine**
 
-To get install the extension up and running locally, follow the procedure/instructions below:
+To install the extension on Revit, follow the procedure/instructions below:
 - [Installing a pyrevit extension](https://kipkemei.hashnode.dev/installing-a-pyrevit-extension)
 
 

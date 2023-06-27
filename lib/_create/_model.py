@@ -37,7 +37,7 @@ uidoc = __revit__.ActiveUIDocument  # obj that represent the current active proj
 active_view = doc.ActiveView
 active_level = doc.ActiveView.GenLevel
 
-def place_reveal(host_wall_id,variable_distance):
+def place_reveal(__title__, host_wall_id,variable_distance):
 
     # create a new  wall sweep
     tmp = """
@@ -59,9 +59,28 @@ def place_reveal(host_wall_id,variable_distance):
     wallSweepInfo.Distance = variable_distance
     wallSweepInfo.WallSide = WallSide.Exterior
     wallSweepInfo.DistanceMeasuredFrom = DistanceMeasuredFrom.Base
-    wall_sweep = WallSweep.Create(wall, wallSweepTypeId, wallSweepInfo)
+
+    with Transaction(doc, __title__) as t:
+        t.Start()
+        wall_sweep = WallSweep.Create(wall, wallSweepTypeId, wallSweepInfo)
+        t.Commit()
 
     return wall_sweep
+
+def adjust_wall_sweep_length(__title__, wall_sweep):
+
+    # get existing length of the wall parameter
+    length_param = wall_sweep.get_Parameter(BuiltInParameter.CURVE_ELEM_LENGTH)
+    print (length_param)
+    current_length = length_param.AsDouble()
+
+    # adjust length by an 1 inch to cut the panel completely
+    new_length = current_length + 0.08
+
+    with Transaction(doc, __title__) as t:
+        t.Start()
+        length_param.Set(new_length)
+        t.Commit()
 
 
 def get_host_wall_id(part):

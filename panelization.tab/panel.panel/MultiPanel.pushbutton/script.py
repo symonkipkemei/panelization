@@ -180,7 +180,7 @@ def get_reveal_indexes(left_edge, right_edge):
             left_edge -= panel_size
             reveal_indexes.append(left_edge)
 
-    elif incomplete_panel_length > 4:
+    elif incomplete_panel_length < 2:
         # If there is an incomplete panel half the panel before the last reveal
         for x in range(0, (no_complete_panels - 1)):
             left_edge -= panel_size
@@ -188,7 +188,7 @@ def get_reveal_indexes(left_edge, right_edge):
         left_edge -= half_panel_size
         reveal_indexes.append(left_edge)
 
-    elif incomplete_panel_length < 4:
+    elif incomplete_panel_length > 2:
         # If there is an incomplete panel half the panel before the last reveal
         for x in range(0, no_complete_panels):
             left_edge -= panel_size

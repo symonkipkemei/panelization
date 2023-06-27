@@ -184,7 +184,6 @@ def main():
     part = get_part()
     host_wall_id = get_host_wall_id(part)
     left_edge_index, right_edge_index = get_edge_index(part)
-    print ("left edge index", left_edge_index, "right edge index", right_edge_index)
     panel_position = get_panel_position(left_edge_index, right_edge_index)
 
     auto_panel(host_wall_id, panel_position)

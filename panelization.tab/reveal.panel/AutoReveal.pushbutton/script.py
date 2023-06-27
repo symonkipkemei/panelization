@@ -85,20 +85,15 @@ def main():
     # select part element
     reference = uidoc.Selection.PickObject(ObjectType.Element)
     part = uidoc.Document.GetElement(reference)
-    #get host id from
+
+    # get host wall and variable distance
     host_wall_id = m.get_host_wall_id(part)
-    variable_distance = 3
+    variable_distance = 0
 
-    try:
-        with Transaction(doc, __title__) as t:
-            t.Start()
-
-            m.place_reveal(host_wall_id, variable_distance)
-
-            t.Commit()
-    except Exception as e:
-        print ('The following error has occurred: {}'.format(e))
-        print (Exception)
+    # place wall sweep and adjust it's length
+    wall_sweep = m.place_reveal(__title__, host_wall_id, variable_distance)
+    #m.adjust_wall_sweep_length(__title__, wall_sweep)
 
 if __name__ == "__main__":
     main()
+    #extend_wall()

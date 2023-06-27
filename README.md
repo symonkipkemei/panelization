@@ -13,22 +13,20 @@
 <h1 id="intro">Panelization</h1>
 
 
-**Panelization?**
-
 ![Alt text](image.png)
 
-Splitting Parts (Outer layers of the walls) with laps ( vertical reveals) into Standard Panels of 4’ Width  or less for the Prime Wall System fabrication
+Panelization is a job engineering production process used by [Bamcore](https://www.bamcore.com/) to
+splitting Parts (Outer layers of the walls) with laps ( vertical reveals) into Standard Panels of 4’ Width  or less for 
+Prime Wall System fabrication.
 
+The project intends to intuitively automate the process (currently done manually ) by:
 
-
-**usage**
-
-The programme is able to intuitively :
-1. Auto place reveals
-2. Placing reveals on Parts without Openings
-3. Placing reveals on Parts with Openings that do not have horizontal headers
-4. Placing reveals on Parts with openings and automated horizontal headers
-5. Placing reveals on Parts with openings and manual horizontal headers
+1. Auto placing reveals
+2. Auto panelling
+3. Auto placing reveals on Parts without Openings
+4. Auto placing reveals on Parts with Openings that do not have horizontal headers
+5. Auto placing reveals on Parts with openings and automated horizontal headers
+6. Auto placing reveals on Parts with openings and manual horizontal headers
 
 
 <TECHNOLOGIES>
@@ -39,6 +37,7 @@ The programme is able to intuitively :
 - Python
 - RevitAPI
 - pyRevit
+- C#
 
 
 <PROJECT-SETUP>

@@ -1,4 +1,5 @@
 from __future__ import division
+
 # METADATA
 ################################################################################################################################
 
@@ -41,7 +42,6 @@ __max_revit_ver__ = 2022
 
 
 # regular
-
 
 import random
 
@@ -132,9 +132,11 @@ def get_edge_index(part):
         # abstract the length of the part
         part_length = part.get_Parameter(BuiltInParameter.DPART_LENGTH_COMPUTED).AsDouble()
 
+        half_part_length = part_length/2
+
         # place reveal
         host_wall_id = get_host_wall_id(part)
-        variable_distance = 3
+        variable_distance = 1
 
         with Transaction(doc, __title__) as t:
             t.Start()
@@ -144,9 +146,18 @@ def get_edge_index(part):
         # get new_part_length
         new_part_length = part.get_Parameter(BuiltInParameter.DPART_LENGTH_COMPUTED).AsDouble()
 
-        # get distance between the left edge and wallSweepInfo.Distance at 0
-        left_edge_index = (part_length - new_part_length) + variable_distance
-        right_edge_index = left_edge_index - part_length
+        #determine the panel size
+        left_edge_index = 0
+        right_edge_index = 0
+
+        if new_part_length < half_part_length:
+            # get distance between the left edge and wallSweepInfo.Distance at 0
+            left_edge_index = (part_length - new_part_length) + variable_distance
+            right_edge_index = left_edge_index - part_length
+
+        elif new_part_length > half_part_length:
+            left_edge_index = new_part_length + variable_distance
+            right_edge_index = left_edge_index - part_length
 
         # delete reveal after abstracting the length
         with Transaction(doc, __title__) as t:

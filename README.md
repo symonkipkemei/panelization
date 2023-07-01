@@ -16,13 +16,13 @@
 ![Alt text](image.png)
 
 Panelization is a job engineering production process used by [Bamcore](https://www.bamcore.com/) to
-splitting Parts (Outer layers of the walls) with laps ( vertical reveals) into Standard Panels of 4’ Width  or less for 
+split parts (Outer layers of the walls) with laps ( vertical reveals) into standard panels of 4’ Width  or less for 
 Prime Wall System fabrication.
 
 The project intends to intuitively automate the process (currently done manually ) by:
 
-1. Auto placing reveals
-2. Auto panelling
+1. Auto placing reveals at distance 0 /half the panel width
+2. Auto panelling, generating panels of 4' width
 3. Auto placing reveals on Parts without Openings
 4. Auto placing reveals on Parts with Openings that do not have horizontal headers
 5. Auto placing reveals on Parts with openings and automated horizontal headers

@@ -45,7 +45,7 @@ __helpurl__ = "https://www.linkedin.com/in/symon-kipkemei/"
 __highlight__ = 'new'
 
 __min_revit_ver__ = 2020
-__max_revit_ver__ = 2022
+__max_revit_ver__ = 2023
 
 # IMPORTS
 ################################################################################################################################
@@ -70,39 +70,10 @@ active_view = doc.ActiveView
 active_level = doc.ActiveView.GenLevel
 
 
+
 def main():
-    part = g.get_part()
-    host_wall_id = g.get_host_wall_id(part)
-    layer_index = g.get_layer_index(part)
-    left_lap_id  = ElementId(352818)
-    right_lap_id = ElementId(352808)
-
-    variable_distance = 3
-
-    if layer_index == 1:  # exterior face
-        side_of_wall = WallSide.Exterior
-        lap_type_id = right_lap_id
-        left_edge, right_edge = g.get_edge_index(__title__, part, lap_type_id,variable_distance, side_of_wall)
-        reveal_indexes = g.get_reveal_indexes(left_edge, right_edge, exterior_face=True)
-        a.auto_panel(__title__, host_wall_id, lap_type_id, reveal_indexes, side_of_wall)
-
-    elif layer_index == 2:  # interior face of partition walls
-        side_of_wall = WallSide.Interior
-        lap_type_id = left_lap_id
-        left_edge, right_edge = g.get_edge_index(__title__, part, lap_type_id, variable_distance, side_of_wall)
-        reveal_indexes = g.get_reveal_indexes(left_edge, right_edge, exterior_face=False)
-        a.auto_panel(__title__, host_wall_id, lap_type_id, reveal_indexes, side_of_wall)
-
-    elif layer_index == 3:  # interior face
-        side_of_wall = WallSide.Interior
-        lap_type_id = left_lap_id
-        left_edge, right_edge = g.get_edge_index(__title__, part, lap_type_id, variable_distance, side_of_wall)
-        reveal_indexes = g.get_reveal_indexes(left_edge, right_edge, exterior_face=False)
-        a.auto_panel(__title__, host_wall_id, lap_type_id, reveal_indexes, side_of_wall)
-
-    else:
-        print ("This is a foreign Part not recognized, "
-               "raise an issue on 'https://github.com/symonkipkemei/panelization/issues' ")
+    part = g.select_part()
+    a.auto_parts(__title__, part)
 
 
 if __name__ == "__main__":

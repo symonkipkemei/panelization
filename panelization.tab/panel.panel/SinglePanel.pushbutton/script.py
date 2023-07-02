@@ -67,7 +67,7 @@ active_level = doc.ActiveView.GenLevel
 # FUNCTIONS
 
 def main():
-    part = g.get_part()
+    part = g.select_part()
     host_wall_id = g.get_host_wall_id(part)
     layer_index = g.get_layer_index(part)
     left_lap_id = ElementId(352818)

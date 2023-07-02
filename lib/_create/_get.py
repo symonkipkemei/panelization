@@ -12,7 +12,7 @@ import clr
 
 clr.AddReference("System")
 
-from _auto import auto_reveal
+from _create import _auto as a
 
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> VARIABLES
 
@@ -37,7 +37,12 @@ def get_host_wall_id(part):
     return host_wall_id
 
 
-def get_part():
+def select_all_parts():
+    all_parts = FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_Parts).\
+        WhereElementIsNotElementType().ToElements()
+
+    return all_parts
+def select_part():
     """Selects a part from the uidoc
     :return: returns the Part object
     """
@@ -69,7 +74,7 @@ def get_edge_index(__title__, part, lap_type_id, variable_distance, side_of_wall
 
         with Transaction(doc, __title__) as t:
             t.Start()
-            wall_sweep = auto_reveal(host_wall_id, lap_type_id, variable_distance, side_of_wall)
+            wall_sweep = a.auto_reveal(host_wall_id, lap_type_id, variable_distance, side_of_wall)
             t.Commit()
 
         # get new_part_length

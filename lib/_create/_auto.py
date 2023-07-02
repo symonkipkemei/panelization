@@ -9,8 +9,9 @@ from Autodesk.Revit.DB.Structure import StructuralType
 from Autodesk.Revit.UI.Selection import ObjectType
 
 import clr
-
 clr.AddReference("System")
+
+from _create import _get as g
 
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> VARIABLES
 
@@ -84,7 +85,50 @@ def auto_panel(__title__, host_wall_id, lap_type_id, reveal_indexes, side_of_wal
         print ('The following error has occurred: {}'.format(e))
 
 
-def auto_wall_sweep_length(__title__, wall_sweep):
+def auto_parts(__title__, part):
+    """
+    Identifies :
+    1. the Parts ( exterior, interior or partition ) to be used intuitively
+    2. The lap (right or left) to be used to be used intuitively
+    3. Direction to be used  right-> left or left->right intuitively
+    :param part: Part to be panelized
+    :param __title__: tool title
+    :return: None
+    """
+    host_wall_id = g.get_host_wall_id(part)
+    layer_index = g.get_layer_index(part)
+    left_lap_id = ElementId(352818)
+    right_lap_id = ElementId(352808)
+
+    variable_distance = 3
+
+    if layer_index == 1:  # exterior face
+        side_of_wall = WallSide.Exterior
+        lap_type_id = right_lap_id
+        left_edge, right_edge = g.get_edge_index(__title__, part, lap_type_id, variable_distance, side_of_wall)
+        reveal_indexes = g.get_reveal_indexes(left_edge, right_edge, exterior_face=True)
+        auto_panel(__title__, host_wall_id, lap_type_id, reveal_indexes, side_of_wall)
+
+    elif layer_index == 2:  # interior face of partition walls
+        side_of_wall = WallSide.Interior
+        lap_type_id = left_lap_id
+        left_edge, right_edge = g.get_edge_index(__title__, part, lap_type_id, variable_distance, side_of_wall)
+        reveal_indexes = g.get_reveal_indexes(left_edge, right_edge, exterior_face=False)
+        auto_panel(__title__, host_wall_id, lap_type_id, reveal_indexes, side_of_wall)
+
+    elif layer_index == 3:  # interior face
+        side_of_wall = WallSide.Interior
+        lap_type_id = left_lap_id
+        left_edge, right_edge = g.get_edge_index(__title__, part, lap_type_id, variable_distance, side_of_wall)
+        reveal_indexes = g.get_reveal_indexes(left_edge, right_edge, exterior_face=False)
+        auto_panel(__title__, host_wall_id, lap_type_id, reveal_indexes, side_of_wall)
+
+    else:
+        print ("This is a foreign Part not recognized, "
+               "raise an issue on 'https://github.com/symonkipkemei/panelization/issues' ")
+
+
+def auto_adjust_wall_sweep_length(__title__, wall_sweep):
     """
     Adjust length of wall sweep so that it cuts the panel completely
     :param __title__: tool title

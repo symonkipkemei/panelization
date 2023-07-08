@@ -122,6 +122,9 @@ def get_reveal_indexes(left_edge, right_edge, exterior_face=True):
     part_length = left_edge - right_edge
     panel_size = 3.927083  # 3' 11 1/8"
     half_panel_size = 1.927083  # 1' 11 1/8"
+    minimum_panel = 2
+    reveal_width = 0.072917 #the width of the reveal 7/8"
+
 
     no_complete_panels = int(part_length // panel_size)
     incomplete_panel_length = part_length % panel_size
@@ -129,15 +132,17 @@ def get_reveal_indexes(left_edge, right_edge, exterior_face=True):
     # store all reveal indexes
     reveal_indexes = []
 
-    if incomplete_panel_length == 0:  # the length can be divided perfectly into panels
-        for x in range(0, no_complete_panels):
-            if exterior_face:
+    if incomplete_panel_length == 0:  # the length of Parts can be divided perfectly into panels
+        if exterior_face:
+            for x in range(0, no_complete_panels):
                 left_edge -= panel_size
                 reveal_indexes.append(left_edge)
-
-            else:
+        else:
+            right_edge = right_edge + reveal_width
+            for x in range(0, no_complete_panels):
                 right_edge += panel_size
-                reveal_indexes.append(left_edge)
+                reveal_indexes.append(right_edge)
+
 
     elif incomplete_panel_length < 2:  # the remaining length after whole panels, if less than 2', split previous panel,
         # the remainder would be less than 4'
@@ -149,18 +154,21 @@ def get_reveal_indexes(left_edge, right_edge, exterior_face=True):
             reveal_indexes.append(left_edge)
 
         else:
+            right_edge = right_edge + reveal_width #to allow reveals cut internal panels at 4'
             for x in range(0, (no_complete_panels - 1)):
                 right_edge += panel_size
                 reveal_indexes.append(right_edge)
             right_edge += half_panel_size
             reveal_indexes.append(right_edge)
 
-    elif incomplete_panel_length > 2:  # the remaining length after whole panels, if greater than 2', retain it
-        for x in range(0, no_complete_panels):
-            if exterior_face:
+    elif incomplete_panel_length > minimum_panel:  # the remaining length after whole panels, if greater than 2', retain it
+        if exterior_face:
+            for x in range(0, no_complete_panels):
                 left_edge -= panel_size
                 reveal_indexes.append(left_edge)
-            else:
+        else:
+            right_edge = right_edge + reveal_width
+            for x in range(0, no_complete_panels):
                 right_edge += panel_size
                 reveal_indexes.append(right_edge)
 

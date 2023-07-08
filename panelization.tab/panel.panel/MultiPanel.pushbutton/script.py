@@ -54,6 +54,7 @@ from Autodesk.Revit.DB import *
 import clr
 
 clr.AddReference("System")
+
 from _create import _auto as a
 from _create import _get as g
 
@@ -73,6 +74,7 @@ active_level = doc.ActiveView.GenLevel
 
 def main():
     part = g.select_part()
+    part = g.check_if_part_panelized(part)
     a.auto_parts(__title__, part)
 
 

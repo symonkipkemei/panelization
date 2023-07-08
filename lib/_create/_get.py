@@ -38,10 +38,13 @@ def get_host_wall_id(part):
 
 
 def select_all_parts():
-    all_parts = FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_Parts).\
+    """Selects all parts in a project"""
+    all_parts = FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_Parts). \
         WhereElementIsNotElementType().ToElements()
 
     return all_parts
+
+
 def select_part():
     """Selects a part from the uidoc
     :return: returns the Part object
@@ -123,8 +126,7 @@ def get_reveal_indexes(left_edge, right_edge, exterior_face=True):
     panel_size = 3.927083  # 3' 11 1/8"
     half_panel_size = 1.927083  # 1' 11 1/8"
     minimum_panel = 2
-    reveal_width = 0.072917 #the width of the reveal 7/8"
-
+    reveal_width = 0.072917  # the width of the reveal 7/8"
 
     no_complete_panels = int(part_length // panel_size)
     incomplete_panel_length = part_length % panel_size
@@ -154,7 +156,7 @@ def get_reveal_indexes(left_edge, right_edge, exterior_face=True):
             reveal_indexes.append(left_edge)
 
         else:
-            right_edge = right_edge + reveal_width #to allow reveals cut internal panels at 4'
+            right_edge = right_edge + reveal_width  # to allow reveals cut internal panels at 4'
             for x in range(0, (no_complete_panels - 1)):
                 right_edge += panel_size
                 reveal_indexes.append(right_edge)
@@ -214,3 +216,29 @@ def get_layer_index(part):
     return layer_index
 
 
+def check_if_parts_panelized(parts):
+    """
+    Filter parts that have not been panelized only, to avoid panelizing panels further
+    :param parts: list of parts selected from an open revit document
+    :return: filter list of parts yet to be panelized
+    """
+    parts_to_panelize = []
+    for part in parts:
+        part_length = part.get_Parameter(BuiltInParameter.DPART_LENGTH_COMPUTED).AsDouble()
+        if part_length > 4:
+            parts_to_panelize.append(part)
+
+    return parts_to_panelize
+
+
+def check_if_part_panelized(part):
+    """
+    Checks if a single part has already been panelized
+    :param part: Part
+    :return: non panelized parts
+    """
+    part_length = part.get_Parameter(BuiltInParameter.DPART_LENGTH_COMPUTED).AsDouble()
+    if part_length > 4:
+        return part
+    else:
+        print ("Part already panelized")

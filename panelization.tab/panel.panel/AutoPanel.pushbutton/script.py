@@ -75,7 +75,7 @@ active_level = doc.ActiveView.GenLevel
 
 def main():
     parts = g.select_all_parts()
-    print(parts)
+    parts = g.check_if_parts_panelized(parts)
 
     # start by panelizing exterior walls
     for part in parts:

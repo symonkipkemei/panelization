@@ -53,8 +53,10 @@ def select_part():
     reference = uidoc.Selection.PickObject(ObjectType.Element)
     part = uidoc.Document.GetElement(reference)
 
-    return part
-
+    if str(type(part)) == "<type 'Part'>":
+        return part
+    else:
+        print("Select a Part for it to be multi-panelized, you've selected", type(part))
 
 def get_edge_index(__title__, part, lap_type_id, variable_distance, side_of_wall):
     """

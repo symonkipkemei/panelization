@@ -44,7 +44,7 @@ from Autodesk.Revit.DB.Structure import StructuralType
 from Autodesk.Revit.UI.Selection import ObjectType
 
 from _create import _auto as a
-from _create import  _get as g
+from _create import _get as g
 
 import clr
 clr.AddReference("System")
@@ -61,13 +61,13 @@ active_level = doc.ActiveView.GenLevel
 # FUNCTIONS
 
 def main():
-    part = g.get_part()
+    part = g.select_part()
     host_wall_id = g.get_host_wall_id(part)
     layer_index = g.get_layer_index(part)
     left_lap_id = ElementId(352818)
     right_lap_id = ElementId(352808)
 
-    variable_distance = 3
+    variable_distance = 0
 
     if layer_index == 1:  # exterior face
         side_of_wall = WallSide.Exterior

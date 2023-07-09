@@ -77,18 +77,23 @@ def main():
     parts = g.select_all_parts()
     parts = g.check_if_parts_panelized(parts)
 
-    # start by panelizing exterior walls
+    # start by BamCore 8" Separate I-E - exterior parts
     for part in parts:
         layer_index = g.get_layer_index(part)
-        if layer_index == 1: #exterior parts
+        if layer_index == 1: # exterior parts
             a.auto_parts(__title__, part)
 
-    # start followed by  interior walls
+    # followed by BamCore 8" Separate I-E - interior parts
     for part in parts:
         layer_index = g.get_layer_index(part)
-        if layer_index == 3: #interior parts
+        if layer_index == 3: # interior parts
             a.auto_parts(__title__, part)
 
+    # followed by BamCore 8" Int Only - interior parts
+    for part in parts:
+        layer_index = g.get_layer_index(part)
+        if layer_index == 2: # interior parts
+            a.auto_parts(__title__, part)
 
 
 if __name__ == "__main__":

@@ -36,6 +36,17 @@ def get_host_wall_id(part):
 
     return host_wall_id
 
+def get_host_wall_type_id(host_wall_id):
+    """
+    Abstract the type of the wall
+    :param host_wall_id: id of the wall
+    :return: id of the wall type
+    """
+    host_wall = doc.GetElement(host_wall_id)
+    type_id = host_wall.GetTypeId()
+
+    return type_id
+
 
 def select_all_parts():
     """Selects all parts in a project"""
@@ -244,3 +255,5 @@ def check_if_part_panelized(part):
         return part
     else:
         print ("Part already panelized")
+
+

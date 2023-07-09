@@ -88,7 +88,7 @@ def auto_panel(__title__, host_wall_id, lap_type_id, reveal_indexes, side_of_wal
 def auto_parts(__title__, part):
     """
     Identifies :
-    1. the Parts ( exterior, interior or partition ) to be used intuitively
+    1. the Parts ( exterior, interior or partition ) intuitively
     2. The lap (right or left) to be used to be used intuitively
     3. Direction to be used  right-> left or left->right intuitively
     :param part: Part to be panelized
@@ -96,36 +96,44 @@ def auto_parts(__title__, part):
     :return: None
     """
     host_wall_id = g.get_host_wall_id(part)
+    host_wall_type_id = g.get_host_wall_type_id(host_wall_id)
     layer_index = g.get_layer_index(part)
     left_lap_id = ElementId(352818)
     right_lap_id = ElementId(352808)
 
-    variable_distance = 3
+    variable_distance = 0
 
-    if layer_index == 1:  # exterior face
-        side_of_wall = WallSide.Exterior
-        lap_type_id = right_lap_id
-        left_edge, right_edge = g.get_edge_index(__title__, part, lap_type_id, variable_distance, side_of_wall)
-        reveal_indexes = g.get_reveal_indexes(left_edge, right_edge, exterior_face=True)
-        auto_panel(__title__, host_wall_id, lap_type_id, reveal_indexes, side_of_wall)
+    if host_wall_type_id == ElementId(384173): # BamCore 8" Separate I-E
+        if layer_index == 1:  # exterior face
+            side_of_wall = WallSide.Exterior
+            lap_type_id = right_lap_id
+            left_edge, right_edge = g.get_edge_index(__title__, part, lap_type_id, variable_distance, side_of_wall)
+            reveal_indexes = g.get_reveal_indexes(left_edge, right_edge, exterior_face=True)
+            auto_panel(__title__, host_wall_id, lap_type_id, reveal_indexes, side_of_wall)
 
-    elif layer_index == 2:  # interior face of partition walls
-        side_of_wall = WallSide.Interior
-        lap_type_id = left_lap_id
-        left_edge, right_edge = g.get_edge_index(__title__, part, lap_type_id, variable_distance, side_of_wall)
-        reveal_indexes = g.get_reveal_indexes(left_edge, right_edge, exterior_face=False)
-        auto_panel(__title__, host_wall_id, lap_type_id, reveal_indexes, side_of_wall)
+        elif layer_index == 3:  # interior face
+            side_of_wall = WallSide.Interior
+            lap_type_id = left_lap_id
+            left_edge, right_edge = g.get_edge_index(__title__, part, lap_type_id, variable_distance, side_of_wall)
+            reveal_indexes = g.get_reveal_indexes(left_edge, right_edge, exterior_face=False)
+            auto_panel(__title__, host_wall_id, lap_type_id, reveal_indexes, side_of_wall)
 
-    elif layer_index == 3:  # interior face
-        side_of_wall = WallSide.Interior
-        lap_type_id = left_lap_id
-        left_edge, right_edge = g.get_edge_index(__title__, part, lap_type_id, variable_distance, side_of_wall)
-        reveal_indexes = g.get_reveal_indexes(left_edge, right_edge, exterior_face=False)
-        auto_panel(__title__, host_wall_id, lap_type_id, reveal_indexes, side_of_wall)
+    elif host_wall_type_id == ElementId(400084):  # BamCore 8" Int Only
+        if layer_index == 2:  # interior face of partition walls, ignore layer-index 1 (the core)
+            side_of_wall = WallSide.Interior
+            lap_type_id = left_lap_id
+            left_edge, right_edge = g.get_edge_index(__title__, part, lap_type_id, variable_distance, side_of_wall)
+            reveal_indexes = g.get_reveal_indexes(left_edge, right_edge, exterior_face=False)
+            auto_panel(__title__, host_wall_id, lap_type_id, reveal_indexes, side_of_wall)
 
     else:
-        print ("This is a foreign Part not recognized, "
-               "raise an issue on 'https://github.com/symonkipkemei/panelization/issues' ")
+        print ("This Wall type not recognized by the script \n\n"
+               " Use either BamCore 8 Separate I-E or BamCore 8 Int Only"
+               "Download and load Bamcore Template from: \n"
+               "'https://github.com/symonkipkemei/panelization/tree/main/rvt-template'. \n"
+               "Incase of any further errors raise an issue on : \n"
+               " 'https://github.com/symonkipkemei/panelization/issues' \n")
+
 
 
 def auto_adjust_wall_sweep_length(__title__, wall_sweep):

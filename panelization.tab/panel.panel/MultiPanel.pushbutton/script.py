@@ -71,10 +71,9 @@ active_view = doc.ActiveView
 active_level = doc.ActiveView.GenLevel
 
 
-
 def main():
     part = g.select_part()
-    part = g.check_if_part_panelized(part)
+    #part = g.check_if_part_panelized(part)
     a.auto_parts(__title__, part)
 
 

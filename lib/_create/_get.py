@@ -36,6 +36,7 @@ def get_host_wall_id(part):
 
     return host_wall_id
 
+
 def get_host_wall_type_id(host_wall_id):
     """
     Abstract the type of the wall
@@ -69,7 +70,62 @@ def select_part():
     else:
         print("Select a Part for it to be multi-panelized, you've selected", type(part))
 
-def get_edge_index(__title__, part, lap_type_id, variable_distance, side_of_wall):
+
+def get_edge_index(__title__, part, host_wall_id, lap_type_id, variable_distance, side_of_wall):
+    """
+    Get the edge indexes ( left and right) when a part is selected
+    :param __title__: tool title
+    :param part: selected part
+    :param variable_distance: distance from reveal at 0
+    :param side_of_wall: side to place reveals
+    :return:
+    """
+
+    # abstract the length of the part
+    part_length = part.get_Parameter(BuiltInParameter.DPART_LENGTH_COMPUTED).AsDouble()
+    print("PART_LENGTH", part_length)
+
+    # split parts  by placing a reveal: old_part(retains the original part Id), new_part (assigned a new part id)
+
+    with Transaction(doc, __title__) as t:
+        t.Start()
+        wall_sweep = a.auto_reveal(host_wall_id, lap_type_id, variable_distance, side_of_wall)
+        t.Commit()
+
+    # get old_part_length
+    old_part_length_a = part.get_Parameter(BuiltInParameter.DPART_LENGTH_COMPUTED).AsDouble()
+    print("OLD PART LENGTH A", old_part_length_a)
+    new_part_length = part_length - old_part_length_a
+    print("NEW PART LENGTH", new_part_length)
+
+    # move sweep, to determine the placement/orientation of the two parts
+    move_distance = 0.010417  # 1/8", small distance to ensure part is cut
+    move_wall_sweep(__title__, host_wall_id, wall_sweep, move_distance)
+
+    # get old length (after moving wall sweep)
+    old_part_length_b = part.get_Parameter(BuiltInParameter.DPART_LENGTH_COMPUTED).AsDouble()
+    print("OLD PART LENGTH B", old_part_length_b)
+
+    # determine the edge index in reference to reveal at 0
+    if old_part_length_b < old_part_length_a:  # the new part is on the left
+        left_edge_index = old_part_length_a
+        right_edge_index = left_edge_index - part_length
+
+    else:  # the new part is on the right
+
+        left_edge_index = new_part_length
+        right_edge_index = left_edge_index - part_length
+
+    # delete reveal after abstracting the edge indexes
+    with Transaction(doc, __title__) as t:
+        t.Start()
+        doc.Delete(wall_sweep.Id)
+        t.Commit()
+
+    return left_edge_index, right_edge_index
+
+
+def get_edge_index_old(__title__, part, lap_type_id, variable_distance, side_of_wall):
     """
     Get the edge indexes ( left and right) when a part is selected
     :param __title__: tool title
@@ -244,16 +300,48 @@ def check_if_parts_panelized(parts):
     return parts_to_panelize
 
 
-def check_if_part_panelized(part):
+def move_wall_sweep(__title__, host_wall_id, wall_sweep, move_distance):
     """
-    Checks if a single part has already been panelized
-    :param part: Part
-    :return: non panelized parts
+    Move sweep by a particular distance,
+    to check if panel if it's on right or left
+    :param __title__: tool title
+    :param host_wall_id: To determine wall orientation
+    :param move_distance: The distance to move by
+    :param wall_sweep: The sweep to be moved
     """
-    part_length = part.get_Parameter(BuiltInParameter.DPART_LENGTH_COMPUTED).AsDouble()
-    if part_length > 4:
-        return part
-    else:
-        print ("Part already panelized")
+    with Transaction(doc, __title__) as t:
+        t.Start()
+        # move either way depending on the orientation of the part
+        orientation = get_wall_orientation(host_wall_id)
+        if orientation:
+            location = wall_sweep.Location.Move(XYZ(move_distance, 0, 0))
+            location = wall_sweep.Location.Move(XYZ(0, move_distance, 0))
+
+        elif not orientation:
+            location = wall_sweep.Location.Move(XYZ(0 - move_distance, 0, 0))
+            location = wall_sweep.Location.Move(XYZ(0, 0 - move_distance, 0))
+
+        t.Commit()
 
 
+
+def get_wall_orientation(host_wall_id):
+    """
+    Determines the orientation of the wall
+    :param host_wall_id: The selected wall
+    :return: If wall is negative or positive
+    """
+    global positive
+    host_wall = doc.GetElement(host_wall_id)
+    orientation = host_wall.Orientation
+
+    if orientation[0] == -1:
+        positive = False
+    elif orientation[0] == 1:
+        positive = True
+    elif orientation[1] == -1:
+        positive = False
+    elif orientation[1] == 1:
+        positive = True
+
+    return positive

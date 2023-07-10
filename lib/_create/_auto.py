@@ -107,14 +107,14 @@ def auto_parts(__title__, part):
         if layer_index == 1:  # exterior face
             side_of_wall = WallSide.Exterior
             lap_type_id = right_lap_id
-            left_edge, right_edge = g.get_edge_index(__title__, part, lap_type_id, variable_distance, side_of_wall)
+            left_edge, right_edge = g.get_edge_index(__title__, part,host_wall_id, lap_type_id, variable_distance, side_of_wall)
             reveal_indexes = g.get_reveal_indexes(left_edge, right_edge, exterior_face=True)
             auto_panel(__title__, host_wall_id, lap_type_id, reveal_indexes, side_of_wall)
 
         elif layer_index == 3:  # interior face
             side_of_wall = WallSide.Interior
             lap_type_id = left_lap_id
-            left_edge, right_edge = g.get_edge_index(__title__, part, lap_type_id, variable_distance, side_of_wall)
+            left_edge, right_edge = g.get_edge_index(__title__, part, host_wall_id, lap_type_id, variable_distance, side_of_wall)
             reveal_indexes = g.get_reveal_indexes(left_edge, right_edge, exterior_face=False)
             auto_panel(__title__, host_wall_id, lap_type_id, reveal_indexes, side_of_wall)
 
@@ -122,7 +122,7 @@ def auto_parts(__title__, part):
         if layer_index == 2:  # interior face of partition walls, ignore layer-index 1 (the core)
             side_of_wall = WallSide.Interior
             lap_type_id = left_lap_id
-            left_edge, right_edge = g.get_edge_index(__title__, part, lap_type_id, variable_distance, side_of_wall)
+            left_edge, right_edge = g.get_edge_index(__title__, part,host_wall_id, lap_type_id, variable_distance, side_of_wall)
             reveal_indexes = g.get_reveal_indexes(left_edge, right_edge, exterior_face=False)
             auto_panel(__title__, host_wall_id, lap_type_id, reveal_indexes, side_of_wall)
 

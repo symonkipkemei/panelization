@@ -71,6 +71,7 @@ def select_part():
         print("Select a Part for it to be multi-panelized, you've selected", type(part))
 
 
+
 def get_edge_index(__title__, part, host_wall_id, lap_type_id, variable_distance, side_of_wall):
     """
     Get the edge indexes ( left and right) when a part is selected
@@ -81,6 +82,9 @@ def get_edge_index(__title__, part, host_wall_id, lap_type_id, variable_distance
     :return:
     """
 
+
+    global left_edge_index, right_edge_index
+
     # abstract the length of the part
     part_length = part.get_Parameter(BuiltInParameter.DPART_LENGTH_COMPUTED).AsDouble()
     print("PART_LENGTH", part_length)
@@ -89,94 +93,56 @@ def get_edge_index(__title__, part, host_wall_id, lap_type_id, variable_distance
 
     with Transaction(doc, __title__) as t:
         t.Start()
-        wall_sweep = a.auto_reveal(host_wall_id, lap_type_id, variable_distance, side_of_wall)
+        fst_wall_sweep = a.auto_reveal(host_wall_id, lap_type_id, variable_distance, side_of_wall)
         t.Commit()
 
     # get old_part_length
-    old_part_length_a = part.get_Parameter(BuiltInParameter.DPART_LENGTH_COMPUTED).AsDouble()
-    print("OLD PART LENGTH A", old_part_length_a)
-    new_part_length = part_length - old_part_length_a
-    print("NEW PART LENGTH", new_part_length)
+    old_part_length_before_snd_reveal = part.get_Parameter(BuiltInParameter.DPART_LENGTH_COMPUTED).AsDouble()
 
-    # move sweep, to determine the placement/orientation of the two parts
-    move_distance = 0.010417  # 1/8", small distance to ensure part is cut
-    move_wall_sweep(__title__, host_wall_id, wall_sweep, move_distance)
-
-    # get old length (after moving wall sweep)
-    old_part_length_b = part.get_Parameter(BuiltInParameter.DPART_LENGTH_COMPUTED).AsDouble()
-    print("OLD PART LENGTH B", old_part_length_b)
-
-    # determine the edge index in reference to reveal at 0
-    if old_part_length_b < old_part_length_a:  # the new part is on the left
-        left_edge_index = old_part_length_a
-        right_edge_index = left_edge_index - part_length
-
-    else:  # the new part is on the right
-
-        left_edge_index = new_part_length
-        right_edge_index = left_edge_index - part_length
-
-    # delete reveal after abstracting the edge indexes
+    # create snd wall sweep
+    move_distance = 0.166667  # 1/4", small distance to ensure part is cut
     with Transaction(doc, __title__) as t:
         t.Start()
-        doc.Delete(wall_sweep.Id)
+        snd_wall_sweep = a.auto_reveal(host_wall_id, lap_type_id, (variable_distance + move_distance), side_of_wall)
+        t.Commit()
+
+    # get old_part_length after snd reveal
+    old_part_length_after_snd_reveal = part.get_Parameter(BuiltInParameter.DPART_LENGTH_COMPUTED).AsDouble()
+
+    print("OLD PART LENGTH BEFORE SND REVEAL", old_part_length_before_snd_reveal)
+    print("OLD PART LENGTH AFTER SND REVEAL", old_part_length_after_snd_reveal)
+
+    # determine the edge index in reference to reveal at 0
+    if old_part_length_after_snd_reveal == old_part_length_before_snd_reveal and old_part_length_after_snd_reveal != part_length:  # the old part is on the right, not
+        # affected by reveal moving (moves right to left)
+        left_edge_index = (part_length - (old_part_length_before_snd_reveal- variable_distance))
+        right_edge_index = left_edge_index - part_length
+
+    elif old_part_length_after_snd_reveal != old_part_length_before_snd_reveal:  # the old part is on the left
+        # affected by reveal moving (moves right to left)
+        # delete second reveal
+
+        left_edge_index = old_part_length_before_snd_reveal - variable_distance
+        right_edge_index = left_edge_index - part_length
+
+    elif old_part_length_after_snd_reveal == part_length:
+        print ("The walls are non-orthogonal, \nthe reveals did not cut through the part \nRepeat this manually")
+
+    else:
+        print ("Raise an error")
+        print ("The move tool is dysfunctional, check for errors")
+
+    # delete reveals after abstracting the edge indexes
+    with Transaction(doc, __title__) as t:
+        t.Start()
+
+        doc.Delete(fst_wall_sweep.Id)
+        doc.Delete(snd_wall_sweep.Id)
+
         t.Commit()
 
     return left_edge_index, right_edge_index
 
-
-def get_edge_index_old(__title__, part, lap_type_id, variable_distance, side_of_wall):
-    """
-    Get the edge indexes ( left and right) when a part is selected
-    :param __title__: tool title
-    :param part: selected part
-    :param variable_distance: distance from reveal at 0
-    :param side_of_wall: side to place reveals
-    :return:
-    """
-
-    try:
-
-        # abstract the length of the part
-        part_length = part.get_Parameter(BuiltInParameter.DPART_LENGTH_COMPUTED).AsDouble()
-        half_part_length = part_length / 2
-
-        # place reveal
-        host_wall_id = get_host_wall_id(part)
-
-        with Transaction(doc, __title__) as t:
-            t.Start()
-            wall_sweep = a.auto_reveal(host_wall_id, lap_type_id, variable_distance, side_of_wall)
-            t.Commit()
-
-        # get new_part_length
-        new_part_length = part.get_Parameter(BuiltInParameter.DPART_LENGTH_COMPUTED).AsDouble()
-
-        # determine the edge index in reference to reveal at 0
-        left_edge_index = 0
-        right_edge_index = 0
-
-        if new_part_length < half_part_length:
-            # get distance between the left edge and wallSweepInfo.Distance at 0
-            left_edge_index = (part_length - new_part_length) + variable_distance
-            right_edge_index = left_edge_index - part_length
-
-        elif new_part_length > half_part_length:
-            left_edge_index = new_part_length + variable_distance
-            right_edge_index = left_edge_index - part_length
-
-        # delete reveal after abstracting the length
-        with Transaction(doc, __title__) as t:
-            t.Start()
-            doc.Delete(wall_sweep.Id)
-            t.Commit()
-
-        return left_edge_index, right_edge_index
-
-    except Exception as e:
-        print ('The following error has occurred: {}'.format(e))
-
-        return None
 
 
 def get_reveal_indexes(left_edge, right_edge, exterior_face=True):
@@ -300,48 +266,70 @@ def check_if_parts_panelized(parts):
     return parts_to_panelize
 
 
-def move_wall_sweep(__title__, host_wall_id, wall_sweep, move_distance):
+def move_wall_sweep(__title__, x_axis, left_right, wall_sweep, move_distance):
     """
-    Move sweep by a particular distance,
-    to check if panel if it's on right or left
-    :param __title__: tool title
-    :param host_wall_id: To determine wall orientation
+    Move sweep by a particular distance depending on the wall orientation
+    :param left_right: The direction of move
+    :param x_axis: if wall is on x or y plane
+    :param __title__: Tool title
     :param move_distance: The distance to move by
     :param wall_sweep: The sweep to be moved
+
     """
+
+    print ("X axis", x_axis)
+    print ("left_right", left_right)
+
     with Transaction(doc, __title__) as t:
         t.Start()
-        # move either way depending on the orientation of the part
-        orientation = get_wall_orientation(host_wall_id)
-        if orientation:
-            location = wall_sweep.Location.Move(XYZ(move_distance, 0, 0))
-            location = wall_sweep.Location.Move(XYZ(0, move_distance, 0))
 
-        elif not orientation:
-            location = wall_sweep.Location.Move(XYZ(0 - move_distance, 0, 0))
-            location = wall_sweep.Location.Move(XYZ(0, 0 - move_distance, 0))
+        if x_axis:
+            if left_right:
+                location = wall_sweep.Location.Move(XYZ(move_distance, 0, 0))
+            elif not left_right:
+                location = wall_sweep.Location.Move(XYZ((0 - move_distance), 0, 0))
+
+        elif not x_axis:
+            if left_right:
+                location = wall_sweep.Location.Move(XYZ(0, (0 - move_distance), 0))
+            elif not left_right:
+                location = wall_sweep.Location.Move(XYZ(0, move_distance, 0))
 
         t.Commit()
-
 
 
 def get_wall_orientation(host_wall_id):
     """
     Determines the orientation of the wall
     :param host_wall_id: The selected wall
-    :return: If wall is negative or positive
+    :return: The orientation of the wall
     """
-    global positive
+
+    global x_axis, left_right
+
+    # abstract orientation data from revit
     host_wall = doc.GetElement(host_wall_id)
     orientation = host_wall.Orientation
 
-    if orientation[0] == -1:
-        positive = False
-    elif orientation[0] == 1:
-        positive = True
-    elif orientation[1] == -1:
-        positive = False
-    elif orientation[1] == 1:
-        positive = True
+    # determine if the wall is x or y-axis plane
+    if orientation[0] == -1 or orientation[0] == 1:  # Y Axis
+        # determine direction of move
+        x_axis = False
+        if orientation[0] == 1:  # moves left to right
+            left_right = False
+        elif orientation[0] == -1:  # moves right to left
+            left_right = True
 
-    return positive
+    elif orientation[1] == -1 or orientation[1] == 1:  # X axis
+        x_axis = True
+        if orientation[1] == 1:  # moves left to right
+            left_right = True
+        elif orientation[1] == -1:  # moves right to left
+            left_right = False
+
+    else:
+        print ("The wall is not orthogonal and does not belong to a particular plane")
+
+    return x_axis, left_right
+
+

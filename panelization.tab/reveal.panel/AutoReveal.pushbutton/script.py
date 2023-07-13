@@ -67,7 +67,7 @@ def main():
     left_lap_id = ElementId(352818)
     right_lap_id = ElementId(352808)
 
-    variable_distance = 0
+    variable_distance = 1
 
     if layer_index == 1:  # exterior face
         side_of_wall = WallSide.Exterior

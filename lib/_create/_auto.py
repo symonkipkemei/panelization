@@ -115,7 +115,7 @@ def auto_parts(__title__, part):
     # BamCore 8" Int Only
     I_wall_types = [ElementId(400084)]
 
-    if host_wall_type_id in I_E_wall_types:
+    if host_wall_type_id not in I_wall_types:
 
         if layer_index == 1:  # exterior face
             side_of_wall = WallSide.Exterior

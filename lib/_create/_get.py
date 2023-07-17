@@ -71,7 +71,6 @@ def select_part():
         print("Select a Part for it to be multi-panelized, you've selected", type(part))
 
 
-
 def get_edge_index(__title__, part, host_wall_id, lap_type_id, variable_distance, side_of_wall):
     """
     Get the edge indexes ( left and right) when a part is selected
@@ -81,7 +80,6 @@ def get_edge_index(__title__, part, host_wall_id, lap_type_id, variable_distance
     :param side_of_wall: side to place reveals
     :return:
     """
-
 
     global left_edge_index, right_edge_index
 
@@ -115,7 +113,7 @@ def get_edge_index(__title__, part, host_wall_id, lap_type_id, variable_distance
     # determine the edge index in reference to reveal at 0
     if old_part_length_after_snd_reveal == old_part_length_before_snd_reveal and old_part_length_after_snd_reveal != part_length:  # the old part is on the right, not
         # affected by reveal moving (moves right to left)
-        left_edge_index = (part_length - (old_part_length_before_snd_reveal- variable_distance))
+        left_edge_index = (part_length - (old_part_length_before_snd_reveal - variable_distance))
         right_edge_index = left_edge_index - part_length
 
     elif old_part_length_after_snd_reveal != old_part_length_before_snd_reveal:  # the old part is on the left
@@ -142,7 +140,6 @@ def get_edge_index(__title__, part, host_wall_id, lap_type_id, variable_distance
         t.Commit()
 
     return left_edge_index, right_edge_index
-
 
 
 def get_reveal_indexes(left_edge, right_edge, exterior_face=True):
@@ -180,22 +177,29 @@ def get_reveal_indexes(left_edge, right_edge, exterior_face=True):
                 right_edge += panel_size
                 reveal_indexes.append(right_edge)
 
-
-    elif incomplete_panel_length < 2:  # the remaining length after whole panels, if less than 2', split previous panel,
-        # the remainder would be less than 4'
+    elif incomplete_panel_length < minimum_panel:  # the remaining length after whole panels, if less than 2',
+        # split previous panel,the remainder would be less than 4'
         if exterior_face:
             for x in range(0, (no_complete_panels - 1)):
                 left_edge -= panel_size
                 reveal_indexes.append(left_edge)
-            left_edge -= half_panel_size
+
+            part_left_behind = left_edge - right_edge
+            rem = part_left_behind - minimum_panel
+
+            left_edge -= rem
             reveal_indexes.append(left_edge)
 
-        else:
+        else:  # internal face
             right_edge = right_edge + reveal_width  # to allow reveals cut internal panels at 4'
             for x in range(0, (no_complete_panels - 1)):
                 right_edge += panel_size
                 reveal_indexes.append(right_edge)
-            right_edge += half_panel_size
+
+            part_left_behind = left_edge - right_edge
+            rem = part_left_behind - (minimum_panel - 0.072917)
+
+            right_edge += rem
             reveal_indexes.append(right_edge)
 
     elif incomplete_panel_length > minimum_panel:  # the remaining length after whole panels, if greater than 2', retain it
@@ -331,5 +335,3 @@ def get_wall_orientation(host_wall_id):
         print ("The wall is not orthogonal and does not belong to a particular plane")
 
     return x_axis, left_right
-
-

@@ -13,12 +13,16 @@ import clr
 clr.AddReference("System")
 
 from _create import _get as g
+from _create import _test as t
+
 
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> VARIABLES
 
 app = __revit__.Application  # represents the Revit Autodesk Application
 doc = __revit__.ActiveUIDocument.Document  # obj used to create new instances of elements within the active project
 uidoc = __revit__.ActiveUIDocument  # obj that represent the current active project
+
+rvt_year = int(app.VersionNumber)
 
 # create
 active_view = doc.ActiveView
@@ -102,7 +106,7 @@ def auto_parts(__title__, part):
     left_lap_id = ElementId(352818)
     right_lap_id = ElementId(352808)
 
-    variable_distance = 1
+    variable_distance = 3
     # I_E_wall_types
     # BamCore 8" Separate I-E
     # BamCore 5" Separate I-E
@@ -115,11 +119,13 @@ def auto_parts(__title__, part):
     # BamCore 8" Int Only
     I_wall_types = [ElementId(400084)]
 
-    if host_wall_type_id not in I_wall_types:
+    #filter non-edited wall
 
+    if host_wall_type_id not in I_wall_types:
         if layer_index == 1:  # exterior face
             side_of_wall = WallSide.Exterior
             lap_type_id = right_lap_id
+
             left_edge, right_edge = g.get_edge_index(__title__, part, host_wall_id, lap_type_id, variable_distance,
                                                      side_of_wall)
             reveal_indexes = g.get_reveal_indexes(left_edge, right_edge, exterior_face=True)
@@ -149,6 +155,7 @@ def auto_parts(__title__, part):
                "'https://github.com/symonkipkemei/panelization/tree/main/rvt-template'. \n"
                "Incase of any further errors raise an issue on : \n"
                " 'https://github.com/symonkipkemei/panelization/issues' \n")
+
 
 
 def auto_adjust_wall_sweep_length(__title__, wall_sweep):

@@ -7,12 +7,13 @@ from Autodesk.Revit.DB import *
 from Autodesk.Revit.DB import Transaction, Element, ElementId, FilteredElementCollector
 from Autodesk.Revit.DB.Structure import StructuralType
 from Autodesk.Revit.UI.Selection import ObjectType
-
+from Autodesk.Revit.DB.BuiltInFailures import CreationFailures as cf
 import clr
 
 clr.AddReference("System")
 
 from _create import _auto as a
+from _create import _test as t
 
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> VARIABLES
 
@@ -20,6 +21,7 @@ app = __revit__.Application  # represents the Revit Autodesk Application
 doc = __revit__.ActiveUIDocument.Document  # obj used to create new instances of elements within the active project
 uidoc = __revit__.ActiveUIDocument  # obj that represent the current active project
 
+rvt_year = int(app.VersionNumber)
 # create
 active_view = doc.ActiveView
 active_level = doc.ActiveView.GenLevel
@@ -85,10 +87,9 @@ def get_edge_index(__title__, part, host_wall_id, lap_type_id, variable_distance
 
     # abstract the length of the part
     part_length = part.get_Parameter(BuiltInParameter.DPART_LENGTH_COMPUTED).AsDouble()
-    print("PART_LENGTH", part_length)
+    # print("PART_LENGTH", part_length)
 
     # split parts  by placing a reveal: old_part(retains the original part Id), new_part (assigned a new part id)
-
     with Transaction(doc, __title__) as t:
         t.Start()
         fst_wall_sweep = a.auto_reveal(host_wall_id, lap_type_id, variable_distance, side_of_wall)
@@ -107,8 +108,8 @@ def get_edge_index(__title__, part, host_wall_id, lap_type_id, variable_distance
     # get old_part_length after snd reveal
     old_part_length_after_snd_reveal = part.get_Parameter(BuiltInParameter.DPART_LENGTH_COMPUTED).AsDouble()
 
-    print("OLD PART LENGTH BEFORE SND REVEAL", old_part_length_before_snd_reveal)
-    print("OLD PART LENGTH AFTER SND REVEAL", old_part_length_after_snd_reveal)
+    # print("OLD PART LENGTH BEFORE SND REVEAL", old_part_length_before_snd_reveal)
+    # print("OLD PART LENGTH AFTER SND REVEAL", old_part_length_after_snd_reveal)
 
     # determine the edge index in reference to reveal at 0
     if old_part_length_after_snd_reveal == old_part_length_before_snd_reveal and old_part_length_after_snd_reveal != part_length:  # the old part is on the right, not
@@ -124,7 +125,14 @@ def get_edge_index(__title__, part, host_wall_id, lap_type_id, variable_distance
         right_edge_index = left_edge_index - part_length
 
     elif old_part_length_after_snd_reveal == part_length:
-        print ("The walls are non-orthogonal, \nthe reveals did not cut through the part \nRepeat this manually")
+        with Transaction(doc, __title__) as t:
+            t.Start()
+
+            doc.Delete(fst_wall_sweep.Id)
+            doc.Delete(snd_wall_sweep.Id)
+
+            t.Commit()
+        raise ValueError
 
     else:
         print ("Raise an error")
@@ -156,6 +164,7 @@ def get_reveal_indexes(left_edge, right_edge, exterior_face=True):
     # place reveal at correct position
     part_length = left_edge - right_edge
     panel_size = 3.927083  # 3' 11 1/8"
+    panel_size_23 = panel_size - 0.005208  # 1/16
     half_panel_size = 1.927083  # 1' 11 1/8"
     minimum_panel = 2
     reveal_width = 0.072917  # the width of the reveal 7/8"
@@ -165,6 +174,10 @@ def get_reveal_indexes(left_edge, right_edge, exterior_face=True):
 
     # store all reveal indexes
     reveal_indexes = []
+    if rvt_year <= 2022:
+        panel_size = panel_size
+    elif rvt_year >= 2023:
+        panel_size = panel_size_23
 
     if incomplete_panel_length == 0:  # the length of Parts can be divided perfectly into panels
         if exterior_face:
@@ -302,7 +315,7 @@ def move_wall_sweep(__title__, x_axis, left_right, wall_sweep, move_distance):
         t.Commit()
 
 
-def get_wall_orientation(host_wall_id):
+def check_wall_orientation(host_wall_id):
     """
     Determines the orientation of the wall
     :param host_wall_id: The selected wall
@@ -335,3 +348,23 @@ def get_wall_orientation(host_wall_id):
         print ("The wall is not orthogonal and does not belong to a particular plane")
 
     return x_axis, left_right
+
+
+def check_if_wall_edited(parts):
+    ready = []
+    for part in parts:
+        host_wall_id = get_host_wall_id(part)
+
+        host_wall = doc.GetElement(host_wall_id)
+        sketch = host_wall.SketchId
+
+        if sketch == ElementId(-1):
+            ready.append(part)
+
+    return ready
+
+
+
+
+
+

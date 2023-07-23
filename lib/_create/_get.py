@@ -83,6 +83,8 @@ def get_edge_index(__title__, part, host_wall_id, lap_type_id, variable_distance
     :return:
     """
 
+    panel_size = 3.927083
+
     global left_edge_index, right_edge_index
 
     # abstract the length of the part
@@ -115,6 +117,7 @@ def get_edge_index(__title__, part, host_wall_id, lap_type_id, variable_distance
     if old_part_length_after_snd_reveal == old_part_length_before_snd_reveal and old_part_length_after_snd_reveal != part_length:  # the old part is on the right, not
         # affected by reveal moving (moves right to left)
         left_edge_index = (part_length - (old_part_length_before_snd_reveal - variable_distance))
+
         right_edge_index = left_edge_index - part_length
 
     elif old_part_length_after_snd_reveal != old_part_length_before_snd_reveal:  # the old part is on the left
@@ -122,21 +125,26 @@ def get_edge_index(__title__, part, host_wall_id, lap_type_id, variable_distance
         # delete second reveal
 
         left_edge_index = old_part_length_before_snd_reveal - variable_distance
+        # if rvt_year >= 2023:
+        # marginal_error = 0.005208  # 1/16" of the reveal is not placed correctly at the edge
+        # left_edge_index = left_edge_index + marginal_error
+
         right_edge_index = left_edge_index - part_length
 
     elif old_part_length_after_snd_reveal == part_length:
         with Transaction(doc, __title__) as t:
             t.Start()
-
             doc.Delete(fst_wall_sweep.Id)
             doc.Delete(snd_wall_sweep.Id)
-
             t.Commit()
         raise ValueError
 
     else:
         print ("Raise an error")
         print ("The move tool is dysfunctional, check for errors")
+
+    # print ("LEFT EDGE INDEX ", left_edge_index)
+    # print ("RIGHT EDGE INDEX ", right_edge_index)
 
     # delete reveals after abstracting the edge indexes
     with Transaction(doc, __title__) as t:
@@ -162,39 +170,48 @@ def get_reveal_indexes(left_edge, right_edge, exterior_face=True):
     """
 
     # place reveal at correct position
+    global panelling_distance
     part_length = left_edge - right_edge
-    panel_size = 3.927083  # 3' 11 1/8"
-    panel_size_23 = panel_size - 0.005208  # 1/16
-    half_panel_size = 1.927083  # 1' 11 1/8"
-    minimum_panel = 2
-    reveal_width = 0.072917  # the width of the reveal 7/8"
 
-    no_complete_panels = int(part_length // panel_size)
-    incomplete_panel_length = part_length % panel_size
+    # The panelling distance (Distance required to generate a panel of 4')
+    # from one reveal to another varies based on version
+
+    if rvt_year >= 2023:
+        panelling_distance = 3.927083 - 0.005208  # 3' 11 1/8" - 1/16"
+    elif rvt_year <= 2022:
+        panelling_distance = 3.927083  # 3' 11 1/8"
+
+    minimum_panel = 2
+
+    no_complete_panels = int(part_length // panelling_distance)
+    incomplete_panel_length = part_length % panelling_distance
 
     # store all reveal indexes
     reveal_indexes = []
+
+    # offset reveal width from edge to allow cutting of first panel at 4'
     if rvt_year <= 2022:
-        panel_size = panel_size
+        reveal_width = 0.072917  # the width of the reveal 7/8"
+        right_edge = right_edge + reveal_width
     elif rvt_year >= 2023:
-        panel_size = panel_size_23
+        reveal_width = 0.078125  # the width of the reveal 15/16"
+        right_edge = right_edge + reveal_width
 
     if incomplete_panel_length == 0:  # the length of Parts can be divided perfectly into panels
         if exterior_face:
             for x in range(0, no_complete_panels):
-                left_edge -= panel_size
+                left_edge -= panelling_distance
                 reveal_indexes.append(left_edge)
         else:
-            right_edge = right_edge + reveal_width
             for x in range(0, no_complete_panels):
-                right_edge += panel_size
+                right_edge += panelling_distance
                 reveal_indexes.append(right_edge)
 
     elif incomplete_panel_length < minimum_panel:  # the remaining length after whole panels, if less than 2',
         # split previous panel,the remainder would be less than 4'
         if exterior_face:
             for x in range(0, (no_complete_panels - 1)):
-                left_edge -= panel_size
+                left_edge -= panelling_distance
                 reveal_indexes.append(left_edge)
 
             part_left_behind = left_edge - right_edge
@@ -204,9 +221,8 @@ def get_reveal_indexes(left_edge, right_edge, exterior_face=True):
             reveal_indexes.append(left_edge)
 
         else:  # internal face
-            right_edge = right_edge + reveal_width  # to allow reveals cut internal panels at 4'
             for x in range(0, (no_complete_panels - 1)):
-                right_edge += panel_size
+                right_edge += panelling_distance
                 reveal_indexes.append(right_edge)
 
             part_left_behind = left_edge - right_edge
@@ -218,12 +234,11 @@ def get_reveal_indexes(left_edge, right_edge, exterior_face=True):
     elif incomplete_panel_length > minimum_panel:  # the remaining length after whole panels, if greater than 2', retain it
         if exterior_face:
             for x in range(0, no_complete_panels):
-                left_edge -= panel_size
+                left_edge -= panelling_distance
                 reveal_indexes.append(left_edge)
         else:
-            right_edge = right_edge + reveal_width
             for x in range(0, no_complete_panels):
-                right_edge += panel_size
+                right_edge += panelling_distance
                 reveal_indexes.append(right_edge)
 
     else:
@@ -362,9 +377,3 @@ def check_if_wall_edited(parts):
             ready.append(part)
 
     return ready
-
-
-
-
-
-

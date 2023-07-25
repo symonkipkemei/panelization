@@ -120,7 +120,7 @@ def get_edge_index(__title__, part, host_wall_id, lap_type_id, variable_distance
 
         right_edge_index = left_edge_index - part_length
 
-    elif old_part_length_after_snd_reveal != old_part_length_before_snd_reveal:  # the old part is on the left
+    elif old_part_length_after_snd_reveal != old_part_length_before_snd_reveal and old_part_length_after_snd_reveal != part_length:  # the old part is on the left
         # affected by reveal moving (moves right to left)
         # delete second reveal
 

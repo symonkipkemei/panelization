@@ -14,6 +14,7 @@ clr.AddReference("System")
 
 from _create import _auto as a
 from _create import _test as t
+from _create import _coordinate as c
 
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> VARIABLES
 
@@ -95,6 +96,7 @@ def get_edge_index(__title__, part, host_wall_id, lap_type_id, variable_distance
     with Transaction(doc, __title__) as t:
         t.Start()
         fst_wall_sweep = a.auto_reveal(host_wall_id, lap_type_id, variable_distance, side_of_wall)
+        #fst_bb_centre = c.get_bounding_box_center(fst_wall_sweep)
         t.Commit()
 
     # get old_part_length
@@ -105,6 +107,7 @@ def get_edge_index(__title__, part, host_wall_id, lap_type_id, variable_distance
     with Transaction(doc, __title__) as t:
         t.Start()
         snd_wall_sweep = a.auto_reveal(host_wall_id, lap_type_id, (variable_distance + move_distance), side_of_wall)
+        #snd_bb_centre = c.get_bounding_box_center(fst_wall_sweep)
         t.Commit()
 
     # get old_part_length after snd reveal
@@ -154,6 +157,7 @@ def get_edge_index(__title__, part, host_wall_id, lap_type_id, variable_distance
         doc.Delete(snd_wall_sweep.Id)
 
         t.Commit()
+
 
     return left_edge_index, right_edge_index
 
@@ -377,3 +381,5 @@ def check_if_wall_edited(parts):
             ready.append(part)
 
     return ready
+
+

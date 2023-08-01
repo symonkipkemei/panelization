@@ -68,6 +68,8 @@ def auto_place_reveal(__title__, host_wall_id, lap_type_id, variable_distance, s
         wall_sweep = auto_reveal(host_wall_id, lap_type_id, variable_distance, side_of_wall)
         t.Commit()
 
+    return wall_sweep
+
 
 def auto_panel(__title__, host_wall_id, lap_type_id, reveal_indexes, side_of_wall):
     """

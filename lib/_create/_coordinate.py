@@ -78,22 +78,44 @@ def get_plane_coordinate(coordinates, x_axis_plane):
     return plane_coordinate
 
 
-def get_part_edges_coordinate(part_length, centre_coordinate):
+def get_part_edges_coordinate(part_length, centre_coordinate, correct_direction, layer_index):
     """
     Get the coordinate of both edges of part
+    :param correct_direction: The direction of the panels
     :param part_length: the length of the part
     :param centre_coordinate:  the centre coordinate
     :return: the edge coordinate
     """
 
+    global coordinate_left_edge, coordinate_right_edge
+
     half_part_length = part_length / 2
-    edge1 = centre_coordinate + half_part_length
-    edge2 = centre_coordinate - half_part_length
+    edge_1 = centre_coordinate + half_part_length
+    edge_2 = centre_coordinate - half_part_length
 
-    return edge1, edge2
+    edges = sorted([edge_1, edge_2])
+    lowest_point = edges[0]
+    highest_point = edges[1]
+
+    if layer_index == 1:
+        if correct_direction:
+            coordinate_left_edge = lowest_point
+            coordinate_right_edge = highest_point
+        else:
+            coordinate_left_edge = highest_point
+            coordinate_right_edge = lowest_point
+    elif layer_index == 3:
+        if correct_direction:
+            coordinate_left_edge = highest_point
+            coordinate_right_edge = lowest_point
+        else:
+            coordinate_left_edge = lowest_point
+            coordinate_right_edge = highest_point
+
+    return coordinate_left_edge, coordinate_right_edge
 
 
-def convert_window_coordinate_to_index(part_index_left_edge, part_coordinate_edge, window_coordinate_center):
+def convert_window_coordinate_to_index(part_index_edge, part_coordinate_edge, window_coordinate_center, plus):
     """
     converts coordinates to reveal indexes
     :param part_index_edge: The reveal indexes of one of the edges, preferably the left edge as the reference point/datum
@@ -110,8 +132,13 @@ def convert_window_coordinate_to_index(part_index_left_edge, part_coordinate_edg
         # Get absolute value of  the index
         index_difference = abs(index_difference)
 
+        print ("_____________________________\n")
         print ("index_difference", index_difference)
-        window_index_centre = part_index_left_edge - index_difference
+
+        if plus:  # interior , the index difference is added to the right edge panel
+            window_index_centre = part_index_edge + index_difference
+        elif not plus:  # exterior, the index difference is subtracted from the left edge panel
+            window_index_centre = part_index_edge - index_difference
 
     else:
         print ("The script is faulty")
@@ -119,58 +146,96 @@ def convert_window_coordinate_to_index(part_index_left_edge, part_coordinate_edg
     return window_index_centre
 
 
-def get_direction(reveal_center_1, reveal_center_2, x_axis):
+def get_bounding_box_center(element):
     """
-    Determine the correct direction  based on the reveal coordinates
-    :param reveal_coordinate_1:
-    :param reveal_coordinate_2:
-    :return: correct_direction
+    Get the centre af an element using its bounding box
+    :param element:
+    :return: centre xyz coordinates
     """
 
-    global correct_direction
+    box_coordinates = element.get_BoundingBox(doc.ActiveView)
+    if box_coordinates is not None:
+        maximum = box_coordinates.Max
+        minimum = box_coordinates.Min
 
-    if x_axis:
+        centre = (maximum + minimum) / 2
+    else:
+        print ("Error generating reveal centres")
+        centre = None
+
+    return centre
+
+
+def get_panel_direction(__title__, host_wall_id, lap_type_id, left_edge_index, right_edge_index, side_of_wall,
+                        x_axis_plane, exterior):
+    """
+    Determine the direction of the panels by determining the reveal coordinates in relation to it's direction
+    :param __title__: tool title
+    :param host_wall_id: host element
+    :param lap_type_id: type of lap used
+    :param left_edge_index: left edge of panel
+    :param right_edge_index: right edge of panel
+    :param side_of_wall: interior/exterior placement
+    :param exterior: True if it's exterior
+    :param x_axis_plane: True if it's the x_axis plane
+    :return: The direction, True or False
+    """
+
+    # Establishing the correct reveal distance within the left -right edge range
+    global plane_direction, dst_1, dst_2
+    if exterior:
+        if left_edge_index > right_edge_index:
+            dst_1 = left_edge_index - 1
+            dst_2 = left_edge_index - 2
+
+        elif left_edge_index < right_edge_index:
+            dst_1 = left_edge_index + 1
+            dst_2 = left_edge_index + 2
+
+    else:
+        if right_edge_index > left_edge_index:
+            dst_1 = right_edge_index - 1
+            dst_2 = right_edge_index - 2
+
+        elif right_edge_index < left_edge_index:
+            dst_1 = right_edge_index + 1
+            dst_2 = right_edge_index + 2
+
+    # placing the reveals
+    rvl_1 = a.auto_place_reveal(__title__, host_wall_id, lap_type_id, dst_1, side_of_wall)
+    rvl_2 = a.auto_place_reveal(__title__, host_wall_id, lap_type_id, dst_2, side_of_wall)
+
+    # Abstracting the centres of the reveals (xyz)
+    reveal_center_1 = get_bounding_box_center(rvl_1)
+    reveal_center_2 = get_bounding_box_center(rvl_2)
+
+    # abstracting the X OR Y coordinate from their centers based on the plane ( x-axis or y-axis)
+
+    if x_axis_plane:
         reveal_coordinate_1 = reveal_center_1.X
         reveal_coordinate_2 = reveal_center_2.X
     else:
         reveal_coordinate_1 = reveal_center_1.Y
         reveal_coordinate_2 = reveal_center_2.Y
 
-    print ("Reveal coordinate 1", reveal_coordinate_1)
-    print ("Reveal coordinate 2", reveal_coordinate_2)
-
+    # Determine the direction based on value of each coordinate
     if reveal_coordinate_2 > reveal_coordinate_1:
-        correct_direction = True  # the lowest point becomes the left edge
+        plane_direction = True  # the lowest point becomes the left edge
     elif reveal_coordinate_2 < reveal_coordinate_1:
-        correct_direction = False  # the highest point becomes the left edge
+        plane_direction = False  # the highest point becomes the left edge
     else:
         print ("Reveal positioning failed")
 
-    return correct_direction
+    # delete reveals after abstracting the edge direction
+    with Transaction(doc, __title__) as t:
+        t.Start()
 
+        doc.Delete(rvl_1.Id)
+        doc.Delete(rvl_2.Id)
 
-def get_part_coordinate_left_edge(edge_1, edge_2, correct_direction):
-    """
-    Determine which is the left edge based on the direction of the reveals
-    :param edge_1:
-    :param edge_2:
-    :param correct_direction:
-    :return: The left edge coordinate
-    """
+        t.Commit()
 
-    edges = sorted([edge_1, edge_2])
-    lowest_point = edges[0]
-    highest_point = edges[1]
-
-    if correct_direction:
-        coordinate_left_edge = lowest_point
-        coordinate_right_edge = highest_point
-
-    else:
-        coordinate_left_edge = highest_point
-        coordinate_right_edge = lowest_point
-
-    return coordinate_left_edge
+    return plane_direction
 
 
 # _______________________________________________________________________NON ATOMIC FUNCTION/COMBINES SEVERAL FUNCTIONS

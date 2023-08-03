@@ -75,107 +75,90 @@ active_view = doc.ActiveView
 active_level = doc.ActiveView.GenLevel
 
 
-def get_bounding_box_center(element):
-    """
-    Get the centre af an element using its bounding box
-    :param element:
-    :return: centre xyz coordinates
-    """
-
-    box_coordinates = element.get_BoundingBox(doc.ActiveView)
-
-    if box_coordinates != None:
-        max = box_coordinates.Max
-        min = box_coordinates.Min
-
-        centre = (max + min) / 2
-    else:
-        print ("Error generating reveal centres")
-        centre = None
-
-    return centre
-
-
 def place_reveal_window_centres():
     """
     Places reveals at the centre of the windows
     :return:
     """
+
+    global lap_type_id, side_of_wall, window_centre_index
     # get hosted windows
     part = g.select_part()
     hosted_wall_id = g.get_host_wall_id(part)
     hosted_windows = o.get_hosted_windows(hosted_wall_id)
 
-    # get wall edge index and direction
+    layer_index = g.get_layer_index(part)
     left_lap_id = ElementId(352818)
     right_lap_id = ElementId(352808)
-    side_of_wall = WallSide.Exterior
-    lap_type_id = right_lap_id
     variable_distance = 3
+
+    if layer_index == 1:  # exterior
+        side_of_wall = WallSide.Exterior
+        lap_type_id = right_lap_id
+        exterior = True
+
+    elif layer_index == 3:  # interior
+        side_of_wall = WallSide.Interior
+        lap_type_id = left_lap_id
+        exterior = False
 
     left_edge_index, right_edge_index = g.get_edge_index(__title__, part, hosted_wall_id, lap_type_id,
                                                          variable_distance, side_of_wall)
 
-    print (left_edge_index, right_edge_index)
-    print (left_edge_index - right_edge_index)
-
-    # get left edge coordinate
-
-    part_xyz_centre = get_bounding_box_center(part)
-
-    print ("part_centre", part_xyz_centre)
-
-    # place reveals to determine direction
-    rvl_1 = a.auto_place_reveal(__title__, hosted_wall_id, lap_type_id, left_edge_index - 1, side_of_wall)
-    rvl_2 = a.auto_place_reveal(__title__, hosted_wall_id, lap_type_id, left_edge_index - 2, side_of_wall)
-
-    # reveal centres
-    rvl_centre_1 = get_bounding_box_center(rvl_1)
-    rvl_centre_2 = get_bounding_box_center(rvl_2)
-
-    print ("reveal centre", rvl_centre_1)
-    print ("reveal centre", rvl_centre_2)
-
+    # get the direction of each panel
     x_axis_plane = c.determine_x_plane(hosted_wall_id)
+    direction = c.get_panel_direction(__title__, hosted_wall_id, lap_type_id, left_edge_index, right_edge_index,
+                                      side_of_wall, x_axis_plane, exterior=exterior)
 
-    direction = c.get_direction(rvl_centre_1, rvl_centre_2, x_axis_plane)
+    # Determine the left edge coordinate as the datum
 
-    # delete reveals after abstracting the edge direction
-    with Transaction(doc, __title__) as t:
-        t.Start()
+    part_xyz_centre = c.get_bounding_box_center(part)  # get part center(xyz)
+    part_length = part.get_Parameter(BuiltInParameter.DPART_LENGTH_COMPUTED).AsDouble()  # get part length
+    part_coordinate_centre = c.get_plane_coordinate(part_xyz_centre, x_axis_plane)  # get the part coordinates
 
-        doc.Delete(rvl_1.Id)
-        doc.Delete(rvl_2.Id)
+    left_edge_coordinate, right_edge_coordinate = c.get_part_edges_coordinate(
+        part_length, part_coordinate_centre, direction, layer_index)  # get left edge based on direction
 
-        t.Commit()
+    print ("_____________________________\n")
+
+    print ("left edge index", left_edge_index)
+    print ("right edge index", right_edge_index)
+
+    print ("_____________________________\n")
+    print ("left edge coordinate", left_edge_coordinate)
+    print ("right edge coordinate", right_edge_coordinate)
+
+    print ("_____________________________\n")
+    print ("left index - right index", left_edge_index - right_edge_index)
+    print ("left_co_ right_co", left_edge_coordinate - right_edge_coordinate)
+    print ("_____________________________\n")
 
     print ("direction", direction)
 
-    part_length = part.get_Parameter(BuiltInParameter.DPART_LENGTH_COMPUTED).AsDouble()
-    part_coordinate_centre = c.get_plane_coordinate(part_xyz_centre, x_axis_plane)
-    edge1, edge2 = c.get_part_edges_coordinate(part_length, part_coordinate_centre)
-
-    print ("edge1 coordinates", edge1)
-    print ("edge2 coordinates", edge2)
-    print ("edge2-edge1", edge2 - edge1)
-
-    left_edge_coordinate = c.get_part_coordinate_left_edge(edge1, edge2, direction)
-    print ("left edge coordinate", left_edge_coordinate)
-
-    # get window_coordinate_centre
+    # get window index centre
 
     # loop through windows, determine the window index and place reveals
-    for window in hosted_windows:
-        window_xyz_centre = o.get_window_xyz_centre(window.Id)
-        window_coordinate_centre = c.get_plane_coordinate(window_xyz_centre, x_axis_plane)
-        print ("window coordinate centre", window_coordinate_centre)
+    for window in hosted_windows:  # loop through hosted windows
+        window_xyz_centre = o.get_window_xyz_centre(window.Id)  # get window centre
+        window_coordinate_centre = c.get_plane_coordinate(window_xyz_centre, x_axis_plane)  # get window coordinate
 
-        window_index_centre = c.convert_window_coordinate_to_index(left_edge_index, left_edge_coordinate,
-                                                                   window_coordinate_centre)
+        if layer_index == 1:  # exterior
+            print ("exterior")
+            window_centre_index = c.convert_window_coordinate_to_index(left_edge_index, left_edge_coordinate,
+                                                                       window_coordinate_centre, plus=False)
+        elif layer_index == 3:  # interior
+            print ("interior")
+            window_centre_index = c.convert_window_coordinate_to_index(right_edge_index, right_edge_coordinate,
+                                                                       window_coordinate_centre, plus=True
+                                                                       )
+        # convert window coordinate to index
 
-        print ("window index centre", window_index_centre)
+        print ("_____________________________\n")
 
-        a.auto_place_reveal(__title__, hosted_wall_id, lap_type_id, window_index_centre, side_of_wall)
+        print ("window centre index", window_centre_index)
+        print ("window centre coordinate ", window_coordinate_centre)
+
+        a.auto_place_reveal(__title__, hosted_wall_id, lap_type_id, window_centre_index, side_of_wall)
 
 
 def main(wall_origin):

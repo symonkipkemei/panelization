@@ -115,9 +115,10 @@ def get_part_edges_coordinate(part_length, centre_coordinate, correct_direction,
     return coordinate_left_edge, coordinate_right_edge
 
 
-def convert_window_coordinate_to_index(part_index_edge, part_coordinate_edge, window_coordinate_center, plus):
+def convert_window_coordinate_to_index(part_index_edge, part_coordinate_edge, window_coordinate_center, exterior):
     """
     converts coordinates to reveal indexes
+    :param exterior:
     :param part_index_edge: The reveal indexes of one of the edges, preferably the left edge as the reference point/datum
     :param part_coordinate_edge: The coordinate of one of the edges,
     :param window_coordinate_center: The coordinate of the centre of the window
@@ -135,11 +136,10 @@ def convert_window_coordinate_to_index(part_index_edge, part_coordinate_edge, wi
         print ("_____________________________\n")
         print ("index_difference", index_difference)
 
-        if plus:  # interior , the index difference is added to the right edge panel
-            window_index_centre = part_index_edge + index_difference
-        elif not plus:  # exterior, the index difference is subtracted from the left edge panel
+        if exterior:  # exterior , the index difference is  subtracted from the left edge panel
             window_index_centre = part_index_edge - index_difference
-
+        elif not exterior:  # interior, the index difference is added to the right edge panel
+            window_index_centre = part_index_edge + index_difference
     else:
         print ("The script is faulty")
 

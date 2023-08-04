@@ -15,6 +15,7 @@ clr.AddReference("System")
 from _create import _auto as a
 from _create import _test as t
 from _create import _coordinate as c
+from _create import _openings as o
 
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> VARIABLES
 
@@ -96,7 +97,7 @@ def get_edge_index(__title__, part, host_wall_id, lap_type_id, variable_distance
     with Transaction(doc, __title__) as t:
         t.Start()
         fst_wall_sweep = a.auto_reveal(host_wall_id, lap_type_id, variable_distance, side_of_wall)
-        #fst_bb_centre = c.get_bounding_box_center(fst_wall_sweep)
+        # fst_bb_centre = c.get_bounding_box_center(fst_wall_sweep)
         t.Commit()
 
     # get old_part_length
@@ -107,7 +108,7 @@ def get_edge_index(__title__, part, host_wall_id, lap_type_id, variable_distance
     with Transaction(doc, __title__) as t:
         t.Start()
         snd_wall_sweep = a.auto_reveal(host_wall_id, lap_type_id, (variable_distance + move_distance), side_of_wall)
-        #snd_bb_centre = c.get_bounding_box_center(fst_wall_sweep)
+        # snd_bb_centre = c.get_bounding_box_center(fst_wall_sweep)
         t.Commit()
 
     # get old_part_length after snd reveal
@@ -157,7 +158,6 @@ def get_edge_index(__title__, part, host_wall_id, lap_type_id, variable_distance
         doc.Delete(snd_wall_sweep.Id)
 
         t.Commit()
-
 
     return left_edge_index, right_edge_index
 
@@ -383,3 +383,112 @@ def check_if_wall_edited(parts):
     return ready
 
 
+def get_reveal_indexes_v2(left_edge, right_edge, out_ranges, exterior_face=True):
+    """
+    Retrieve the posiyion to place reveals
+    :param left_edge: The left edge of the wall ( from exterior)
+    :param right_edge: The right edge of the wall ( from exterior)
+    :param panel_size: The size of each panel
+    :param exterior_face: if exterior face, the panel position starts from left to right
+    and right to left if not exterior face
+    :return: the indexes of the reveal position
+    """
+
+    global panelling_distance
+
+    # place reveal at correct position
+
+    part_length = left_edge - right_edge
+
+    # The panelling distance (Distance required to generate a panel of 4')
+    # from one reveal to another varies based on the type of reveal
+
+    if rvt_year >= 2023:
+        panelling_distance = 3.927083 - 0.005208  # 3' 11 1/8" - 1/16"
+    elif rvt_year <= 2022:
+        panelling_distance = 3.927083  # 3' 11 1/8"
+
+    minimum_panel = 2
+
+    no_complete_panels = int(part_length // panelling_distance)
+    incomplete_panel_length = part_length % panelling_distance
+
+    # store all reveal indexes
+    reveal_indexes = []
+
+    # offset reveal width from edge to allow cutting of first panel at 4'
+    if rvt_year <= 2022:
+        reveal_width = 0.072917  # the width of the reveal 7/8"
+        right_edge = right_edge + reveal_width
+    elif rvt_year >= 2023:
+        reveal_width = 0.078125  # the width of the reveal 15/16"
+        right_edge = right_edge + reveal_width
+
+    # establish reveal placement
+
+    if incomplete_panel_length == 0:  # the length of Parts can be divided perfectly into panels
+        if exterior_face:
+            for x in range(0, no_complete_panels):
+                left_edge -= panelling_distance
+                # skipping the out range
+                left_edge = o.skip_out_range(left_edge, out_ranges, exterior=True)
+                reveal_indexes.append(left_edge)
+        else:
+            for x in range(0, no_complete_panels):
+                right_edge += panelling_distance
+                # skipping the out range
+                right_edge = o.skip_out_range(right_edge, out_ranges, exterior=False)
+                reveal_indexes.append(right_edge)
+
+    elif incomplete_panel_length < minimum_panel:  # the remaining length after whole panels, if less than 2',
+        # split previous panel,the remainder would be less than 4'
+        if exterior_face:
+            for x in range(0, (no_complete_panels - 1)):
+                left_edge -= panelling_distance
+
+                # skipping the out range
+                left_edge = o.skip_out_range(left_edge, out_ranges, exterior=True)
+
+                reveal_indexes.append(left_edge)
+
+            part_left_behind = left_edge - right_edge
+            rem = part_left_behind - minimum_panel
+
+            left_edge -= rem
+            reveal_indexes.append(left_edge)
+
+        else:  # internal face
+            for x in range(0, (no_complete_panels - 1)):
+                right_edge += panelling_distance
+
+                # skipping the out range
+                right_edge = o.skip_out_range(right_edge, out_ranges, exterior=False)
+
+                reveal_indexes.append(right_edge)
+
+            part_left_behind = left_edge - right_edge
+            rem = part_left_behind - (minimum_panel - 0.072917)
+
+            right_edge += rem
+            reveal_indexes.append(right_edge)
+
+    elif incomplete_panel_length > minimum_panel:  # the remaining length after whole panels, if greater than 2', retain it
+        if exterior_face:
+            for x in range(0, no_complete_panels):
+                left_edge -= panelling_distance
+
+                # skipping the out range
+                left_edge = o.skip_out_range(left_edge, out_ranges, exterior=True)
+                reveal_indexes.append(left_edge)
+        else:
+            for x in range(0, no_complete_panels):
+                right_edge += panelling_distance
+                # skipping the out range
+                right_edge = o.skip_out_range(right_edge, out_ranges, exterior=False)
+                reveal_indexes.append(right_edge)
+
+    else:
+        print ("The incomplete panel length is unknown or faulty")
+
+    # check if there is a remainder
+    return reveal_indexes

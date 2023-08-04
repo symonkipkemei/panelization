@@ -14,6 +14,8 @@ clr.AddReference("System")
 
 from _create import _get as g
 from _create import _test as t
+from _create import _openings as o
+from _create import  _coordinate as c
 
 
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> VARIABLES
@@ -130,7 +132,8 @@ def auto_parts(__title__, part):
 
             left_edge, right_edge = g.get_edge_index(__title__, part, host_wall_id, lap_type_id, variable_distance,
                                                      side_of_wall)
-            reveal_indexes = g.get_reveal_indexes(left_edge, right_edge, exterior_face=True)
+            out_ranges = o.get_hosted_windows_out_range(__title__, part)
+            reveal_indexes = g.get_reveal_indexes_v2(left_edge, right_edge,out_ranges, exterior_face=True)
             auto_panel(__title__, host_wall_id, lap_type_id, reveal_indexes, side_of_wall)
 
         elif layer_index == 3:  # interior face
@@ -138,7 +141,8 @@ def auto_parts(__title__, part):
             lap_type_id = left_lap_id
             left_edge, right_edge = g.get_edge_index(__title__, part, host_wall_id, lap_type_id, variable_distance,
                                                      side_of_wall)
-            reveal_indexes = g.get_reveal_indexes(left_edge, right_edge, exterior_face=False)
+            out_ranges = o.get_hosted_windows_out_range(__title__, part)
+            reveal_indexes = g.get_reveal_indexes_v2(left_edge, right_edge,out_ranges, exterior_face=False)
             auto_panel(__title__, host_wall_id, lap_type_id, reveal_indexes, side_of_wall)
 
     elif host_wall_type_id in I_wall_types:
@@ -147,6 +151,7 @@ def auto_parts(__title__, part):
             lap_type_id = left_lap_id
             left_edge, right_edge = g.get_edge_index(__title__, part, host_wall_id, lap_type_id, variable_distance,
                                                      side_of_wall)
+
             reveal_indexes = g.get_reveal_indexes(left_edge, right_edge, exterior_face=False)
             auto_panel(__title__, host_wall_id, lap_type_id, reveal_indexes, side_of_wall)
 

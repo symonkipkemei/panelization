@@ -14,7 +14,8 @@ clr.AddReference("System")
 
 from _create import _auto as a
 from _create import _test as t
-
+from _create import _get as g
+from _create import _coordinate as c
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> VARIABLES
 
 app = __revit__.Application  # represents the Revit Autodesk Application
@@ -56,11 +57,11 @@ def get_window_width(window_id):
     :return: the width
     """
     # establish the width of the window
-    window = doc.GetElement(ElementId(window_id))
+    window = doc.GetElement(window_id)
     window_type = window.GetTypeId
-    width = window_type.get_Parameter(BuiltInParameter.DOOR_WIDTH).AsDouble()
+    #width = window_type.get_Parameter(BuiltInParameter.DOOR_WIDTH)
 
-    return width
+    return 3
 
 
 def get_window_location(element_id):
@@ -109,12 +110,17 @@ def get_hosted_windows(wall_id):
     return hosted_windows
 
 
-def get_out_of_bounce_range(window_centre_index, window_length, displacement):
+def get_window_out_range(window_centre_index, window_width, displacement):
     """
-    Provide the displacement range for a particular edge of a window
-    :return:
+    Determine the ranges the reveals should not be placed
+    :param window_centre_index: the index of the window centre
+    :param window_width: the width of the window
+    :param displacement: the displacement distance away from the edges of the windows.
+    This creates the range the reveals cannot be placed
+    :return: the left/right window range, this is in reveal index format
     """
-    width = window_length / 2
+
+    width = window_width / 2
     window_left_index = window_centre_index - width
     window_right_index = window_centre_index + width
 
@@ -129,6 +135,68 @@ def get_out_of_bounce_range(window_centre_index, window_length, displacement):
     right_range = [right_box_range_1, right_box_range_2]
 
     return left_range, right_range
+
+
+def get_hosted_windows_out_range(__title__, part):
+    """
+    Loop through all windows and abstract the ranges the reveals should not pass through
+    :param __title__: tool title
+    :param part: the part being panelized
+    :return: list of all out_ranges
+    """
+    out_ranges = []
+    # get all hosted windows
+    host_wall_id = g.get_host_wall_id(part)
+    hosted_windows = get_hosted_windows(host_wall_id)
+
+    # loop through each window
+    for window in hosted_windows:
+        # determine the window center index of each window
+        window_center_index = get_window_index_centre(__title__, part)
+        window_width = get_window_width(window.Id)
+        displacement = 1
+        # determine the out-range for each window
+        left_out_range, right_out_range = get_window_out_range(window_center_index, window_width, displacement)
+
+        out_ranges.append(left_out_range)
+        out_ranges.append(right_out_range)
+
+    # return a list of all out-range
+    return out_ranges
+
+
+def skip_out_range(edge, out_ranges, exterior=True):
+    """
+    The code skips out the out range by adjusting the left edge position to the lowest edge of the out range
+    :param edge: right/left edge
+    :param out_ranges: the index ranges to be skipped
+    :param exterior: if exterior or interior
+    :return: the new reveal position
+    """
+
+    if exterior:
+        # skipping the out_range
+        # _____________________________________________________________________
+        for edge_range in out_ranges:
+            print (edge_range[0])
+            print (edge_range[1])
+            if edge in range(edge_range[0], edge_range[1]):
+                if edge_range[0] > left_edge:
+                    edge = edge_range[0]
+                elif edge_range[1] > left_edge:
+                    edge = edge_range[0]
+        # _____________________________________________________________________
+    else:
+        # _____________________________________________________________________
+        for edge_range in out_ranges:
+            if edge in range(edge_range[0], edge_range[1]):
+                if edge_range[0] < left_edge:
+                    edge = edge_range[0]
+                elif edge_range[1] < left_edge:
+                    edge = edge_range[0]
+        # _____________________________________________________________________
+
+    return edge
 
 
 def get_window_xyz_centre(window_id):
@@ -153,7 +221,7 @@ def get_window_index_centre(__title__, part):
     hosted_wall_id = g.get_host_wall_id(part)
 
     # get hosted windows
-    hosted_windows = o.get_hosted_windows(hosted_wall_id)
+    hosted_windows = get_hosted_windows(hosted_wall_id)
     layer_index = g.get_layer_index(part)
     variable_distance = 3
     x_axis_plane = c.determine_x_plane(hosted_wall_id)
@@ -189,7 +257,7 @@ def get_window_index_centre(__title__, part):
 
     # loop through hosted windows, determine the window index and place reveals
     for window in hosted_windows:  # loop through hosted windows
-        window_xyz_centre = o.get_window_xyz_centre(window.Id)  # get window centre
+        window_xyz_centre = get_window_xyz_centre(window.Id)  # get window centre
         window_coordinate_centre = c.get_plane_coordinate(window_xyz_centre, x_axis_plane)  # get window coordinate
 
         if layer_index == 1:  # exterior

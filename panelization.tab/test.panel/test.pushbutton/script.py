@@ -75,7 +75,7 @@ active_view = doc.ActiveView
 active_level = doc.ActiveView.GenLevel
 
 
-def place_reveal_window_centres():
+def test_place_reveal_window_centres():
     """
     Places reveals at the centre of the windows
     :return:
@@ -145,11 +145,11 @@ def place_reveal_window_centres():
         if layer_index == 1:  # exterior
             print ("exterior")
             window_centre_index = c.convert_window_coordinate_to_index(left_edge_index, left_edge_coordinate,
-                                                                       window_coordinate_centre, plus=False)
+                                                                       window_coordinate_centre, exterior=True)
         elif layer_index == 3:  # interior
             print ("interior")
             window_centre_index = c.convert_window_coordinate_to_index(right_edge_index, right_edge_coordinate,
-                                                                       window_coordinate_centre, plus=True
+                                                                       window_coordinate_centre, exterior=False
                                                                        )
         # convert window coordinate to index
 
@@ -159,6 +159,42 @@ def place_reveal_window_centres():
         print ("window centre coordinate ", window_coordinate_centre)
 
         a.auto_place_reveal(__title__, hosted_wall_id, lap_type_id, window_centre_index, side_of_wall)
+
+
+def test_place_reveal_out_ranges():
+    # select part
+    # get hosted windows
+    global lap_type_id, side_of_wall
+    part = g.select_part()
+    hosted_wall_id = g.get_host_wall_id(part)
+
+    layer_index = g.get_layer_index(part)
+    left_lap_id = ElementId(352818)
+    right_lap_id = ElementId(352808)
+    variable_distance = 3
+
+    if layer_index == 1:  # exterior
+        side_of_wall = WallSide.Exterior
+        lap_type_id = right_lap_id
+        exterior = True
+
+    elif layer_index == 3:  # interior
+        side_of_wall = WallSide.Interior
+        lap_type_id = left_lap_id
+        exterior = False
+
+    # get out ranges
+    hosted_windows_out_ranges = o.get_hosted_windows_out_range(__title__, part)
+    print (hosted_windows_out_ranges)
+
+    # place reveals on out ranges
+    for window_range in hosted_windows_out_ranges:
+        left_range = window_range[0]
+        righ_range = window_range[1]
+
+        # left edge reveals
+        a.auto_place_reveal(__title__, hosted_wall_id, lap_type_id, left_range, side_of_wall)
+        a.auto_place_reveal(__title__, hosted_wall_id, lap_type_id, righ_range, side_of_wall)
 
 
 def main(wall_origin):
@@ -198,5 +234,5 @@ if __name__ == "__main__":
 
     # centre = get_bounding_box_center(500296)
     # main(centre)
-    place_reveal_window_centres()
-    # testing_bounding_box()
+    #place_reveal_window_centres()
+    test_place_reveal_out_ranges()

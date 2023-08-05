@@ -16,6 +16,7 @@ from _create import _auto as a
 from _create import _test as t
 from _create import _get as g
 from _create import _coordinate as c
+
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> VARIABLES
 
 app = __revit__.Application  # represents the Revit Autodesk Application
@@ -59,7 +60,7 @@ def get_window_width(window_id):
     # establish the width of the window
     window = doc.GetElement(window_id)
     window_type = window.GetTypeId
-    #width = window_type.get_Parameter(BuiltInParameter.DOOR_WIDTH)
+    # width = window_type.get_Parameter(BuiltInParameter.DOOR_WIDTH)
 
     return 3
 
@@ -126,11 +127,11 @@ def get_window_out_range(window_centre_index, window_width, displacement):
 
     # window left edge
     left_box_range_1 = window_left_index - displacement
-    left_box_range_2 = window_right_index + displacement
+    left_box_range_2 = window_left_index + displacement
     left_range = [left_box_range_1, left_box_range_2]
 
     # window right edge
-    right_box_range_1 = window_left_index - displacement
+    right_box_range_1 = window_right_index - displacement
     right_box_range_2 = window_right_index + displacement
     right_range = [right_box_range_1, right_box_range_2]
 
@@ -152,8 +153,8 @@ def get_hosted_windows_out_range(__title__, part):
     # loop through each window
     for window in hosted_windows:
         # determine the window center index of each window
-        window_center_index = get_window_index_centre(__title__, part)
-        window_width = get_window_width(window.Id)
+        window_center_index = get_window_index_centre(__title__, part, window)
+        window_width = 3  # get_window_width(window.Id)
         displacement = 1
         # determine the out-range for each window
         left_out_range, right_out_range = get_window_out_range(window_center_index, window_width, displacement)
@@ -178,22 +179,24 @@ def skip_out_range(edge, out_ranges, exterior=True):
         # skipping the out_range
         # _____________________________________________________________________
         for edge_range in out_ranges:
+            edge_range = sorted(edge_range)
             print (edge_range[0])
             print (edge_range[1])
-            if edge in range(edge_range[0], edge_range[1]):
-                if edge_range[0] > left_edge:
+            if edge_range[0] <= edge <= edge_range[1]:
+                if edge_range[0] > edge:
                     edge = edge_range[0]
-                elif edge_range[1] > left_edge:
-                    edge = edge_range[0]
+                elif edge_range[1] > edge:
+                    edge = edge_range[1]
         # _____________________________________________________________________
     else:
+        # skipping the out_range
         # _____________________________________________________________________
         for edge_range in out_ranges:
-            if edge in range(edge_range[0], edge_range[1]):
-                if edge_range[0] < left_edge:
+            if edge_range[0] <= edge <= edge_range[1]:
+                if edge_range[0] < edge:
                     edge = edge_range[0]
-                elif edge_range[1] < left_edge:
-                    edge = edge_range[0]
+                elif edge_range[1] < edge:
+                    edge = edge_range[1]
         # _____________________________________________________________________
 
     return edge
@@ -210,7 +213,7 @@ def get_window_xyz_centre(window_id):
     return xyz_centre
 
 
-def get_window_index_centre(__title__, part):
+def get_window_index_centre(__title__, part, window):
     """
     Places reveals at the centre of the windows
     :return:
@@ -256,18 +259,18 @@ def get_window_index_centre(__title__, part):
     # get window index centre
 
     # loop through hosted windows, determine the window index and place reveals
-    for window in hosted_windows:  # loop through hosted windows
-        window_xyz_centre = get_window_xyz_centre(window.Id)  # get window centre
-        window_coordinate_centre = c.get_plane_coordinate(window_xyz_centre, x_axis_plane)  # get window coordinate
 
-        if layer_index == 1:  # exterior
-            print ("exterior")
-            window_centre_index = c.convert_window_coordinate_to_index(left_edge_index, left_edge_coordinate,
-                                                                       window_coordinate_centre, exterior)
-        elif layer_index == 3:  # interior
-            print ("interior")
-            window_centre_index = c.convert_window_coordinate_to_index(right_edge_index, right_edge_coordinate,
-                                                                       window_coordinate_centre, exterior
-                                                                       )
+    window_xyz_centre = get_window_xyz_centre(window.Id)  # get window centre
+    window_coordinate_centre = c.get_plane_coordinate(window_xyz_centre, x_axis_plane)  # get window coordinate
+
+    if layer_index == 1:  # exterior
+        print ("exterior")
+        window_centre_index = c.convert_window_coordinate_to_index(left_edge_index, left_edge_coordinate,
+                                                                   window_coordinate_centre, exterior)
+    elif layer_index == 3:  # interior
+        print ("interior")
+        window_centre_index = c.convert_window_coordinate_to_index(right_edge_index, right_edge_coordinate,
+                                                                   window_coordinate_centre, exterior
+                                                                   )
 
     return window_centre_index

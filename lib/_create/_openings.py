@@ -59,10 +59,10 @@ def get_window_width(window_id):
     """
     # establish the width of the window
     window = doc.GetElement(window_id)
-    window_type = window.GetTypeId
-    # width = window_type.get_Parameter(BuiltInParameter.DOOR_WIDTH)
+    window_type = window.Symbol
+    width = window_type.get_Parameter(BuiltInParameter.DOOR_WIDTH).AsDouble()
 
-    return 3
+    return width
 
 
 def get_window_location(element_id):
@@ -154,7 +154,7 @@ def get_hosted_windows_out_range(__title__, part):
     for window in hosted_windows:
         # determine the window center index of each window
         window_center_index = get_window_index_centre(__title__, part, window)
-        window_width = 3  # get_window_width(window.Id)
+        window_width = get_window_width(window.Id)
         displacement = 1
         # determine the out-range for each window
         left_out_range, right_out_range = get_window_out_range(window_center_index, window_width, displacement)

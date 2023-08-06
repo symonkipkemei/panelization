@@ -427,8 +427,11 @@ def get_reveal_indexes_v2(left_edge, right_edge, out_ranges, exterior_face=True)
         print ("panelling started")
         if exterior_face:
             left_edge -= panelling_distance
+            print ("right edge", right_edge)
+            print ("left edge", left_edge)
             # skipping the out range
             left_edge = o.skip_out_range(left_edge, out_ranges, exterior=True)
+            print ("selected left range after out range", left_edge)
             rem_length = left_edge - right_edge
             print ("rem_length", rem_length)
             reveal_indexes.append(left_edge)

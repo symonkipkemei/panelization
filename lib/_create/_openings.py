@@ -155,7 +155,12 @@ def get_hosted_windows_out_range(__title__, part):
         # determine the window center index of each window
         window_center_index = get_window_index_centre(__title__, part, window)
         window_width = get_window_width(window.Id)
-        displacement = 1
+        if window_width <= 4:
+            displacement = (1 / 3) * window_width
+        else:
+            displacement = 1
+
+
         # determine the out-range for each window
         left_out_range, right_out_range = get_window_out_range(window_center_index, window_width, displacement)
 

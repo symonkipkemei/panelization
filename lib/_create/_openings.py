@@ -30,7 +30,7 @@ active_level = doc.ActiveView.GenLevel
 
 
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> FUNCTIONS
-# ________________________________________________________________________________________________WINDOWS
+# ________________________________________________________________________________________________ATOMIC FUNCTIONS
 
 def get_window_width(window_id):
     """
@@ -44,6 +44,7 @@ def get_window_width(window_id):
     width = window_type.get_Parameter(BuiltInParameter.DOOR_WIDTH).AsDouble()
 
     return width
+
 
 def get_window_xyz_centre(window_id):
     """
@@ -140,7 +141,6 @@ def get_hosted_windows_out_range(__title__, part):
         else:
             displacement = 1
 
-
         # determine the out-range for each window
         left_out_range, right_out_range = get_window_out_range(window_center_index, window_width, displacement)
 
@@ -164,12 +164,10 @@ def skip_out_range(edge, out_ranges, exterior=True):
         # skipping the out_range
         # _____________________________________________________________________
         for edge_range in out_ranges:
-            edge_range = sorted(edge_range)
-            print (edge_range[0])
-            print (edge_range[1])
-            if edge_range[0] <= edge <= edge_range[1]:
+            edge_range = sorted(edge_range)  # sort to determine the smallest
+            if edge_range[0] <= edge <= edge_range[1]:  # the range the reveal should not fall within
                 if edge_range[0] > edge:
-                    edge = edge_range[0]
+                    edge = edge_range[0]  # because we are moving left to right, the greatest value is the smallest
                 elif edge_range[1] > edge:
                     edge = edge_range[1]
         # _____________________________________________________________________
@@ -187,22 +185,25 @@ def skip_out_range(edge, out_ranges, exterior=True):
     return edge
 
 
+# ________________________________________________________________________________________________NON ATOMIC FUNCTIONS
 
 def get_window_index_centre(__title__, part, window):
     """
-    Places reveals at the centre of the windows
-    :return:
+    Get window Index centres by referencing it to the right/left edges as datum
+    :param __title__: tool title
+    :param part:Part with window
+    :param window:Window
+    :return:index centre
     """
 
     global lap_type_id, side_of_wall, window_centre_index, exterior
 
     hosted_wall_id = g.get_host_wall_id(part)
+    x_axis_plane = c.determine_x_plane(hosted_wall_id)
 
-    # get hosted windows
-    hosted_windows = get_hosted_windows(hosted_wall_id)
     layer_index = g.get_layer_index(part)
     variable_distance = 3
-    x_axis_plane = c.determine_x_plane(hosted_wall_id)
+
 
     if layer_index == 1:  # exterior
         side_of_wall = WallSide.Exterior
@@ -218,9 +219,8 @@ def get_window_index_centre(__title__, part, window):
                                                          variable_distance, side_of_wall)
 
     # get the direction of each panel
-
     direction = c.get_panel_direction(__title__, hosted_wall_id, lap_type_id, left_edge_index, right_edge_index,
-                                      side_of_wall, x_axis_plane, exterior=exterior)
+                                      side_of_wall, x_axis_plane, exterior)
 
     # Determine the left edge coordinate/ right_edge coordinate as the datum
 
@@ -229,41 +229,20 @@ def get_window_index_centre(__title__, part, window):
     part_coordinate_centre = c.get_plane_coordinate(part_xyz_centre, x_axis_plane)  # get the part coordinates
 
     left_edge_coordinate, right_edge_coordinate = c.get_part_edges_coordinate(
-        part_length, part_coordinate_centre, direction, layer_index)  # get left edge based on direction
+        part_length, part_coordinate_centre, direction, exterior)  # get left edge based on direction
 
     # get window index centre
-
-    # loop through hosted windows, determine the window index and place reveals
-
     window_xyz_centre = get_window_xyz_centre(window.Id)  # get window centre
     window_coordinate_centre = c.get_plane_coordinate(window_xyz_centre, x_axis_plane)  # get window coordinate
 
-    if layer_index == 1:  # exterior
-        print ("exterior")
+    if exterior:  # exterior
         window_centre_index = c.convert_window_coordinate_to_index(left_edge_index, left_edge_coordinate,
                                                                    window_coordinate_centre, exterior)
-    elif layer_index == 3:  # interior
-        print ("interior")
+    else: # interior
         window_centre_index = c.convert_window_coordinate_to_index(right_edge_index, right_edge_coordinate,
                                                                    window_coordinate_centre, exterior
                                                                    )
-
     return window_centre_index
 
 
-# ________________________________________________________________________________________________FAMILY CREATION
 
-def get_type_by_name(type_name):
-    """
-    abstract the symbol of a family by providing its name
-    :param type_name: Name of the family
-    :return: symbol
-    """
-    param_type = ElementId(BuiltInParameter.ALL_MODEL_TYPE_NAME)
-    f_param = ParameterValueProvider(param_type)
-    evaluator = FilterStringEquals()
-    f_rule = FilterStringRule(f_param, evaluator, type_name)
-
-    # create filter
-    filter_type_name = ElementParameterFilter(f_rule)
-    return FilteredElementCollector(doc).WherePasses(filter_type_name).WhereElementIsElementType().FirstElement()

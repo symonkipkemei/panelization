@@ -75,7 +75,7 @@ active_level = doc.ActiveView.GenLevel
 def main():
     selected_parts = g.select_all_parts()
     non_panelized_parts = g.check_if_parts_panelized(selected_parts)
-    parts = g.check_if_wall_edited(non_panelized_parts)
+    parts = g.check_if_host_wall_edited(non_panelized_parts)
 
     # start by BamCore 8" Separate I-E - exterior parts
     for part in parts:

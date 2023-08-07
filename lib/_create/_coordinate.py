@@ -78,9 +78,10 @@ def get_plane_coordinate(coordinates, x_axis_plane):
     return plane_coordinate
 
 
-def get_part_edges_coordinate(part_length, centre_coordinate, correct_direction, layer_index):
+def get_part_edges_coordinate(part_length, centre_coordinate, correct_direction, exterior):
     """
     Get the coordinate of both edges of part
+    :param exterior: Bool, determines if panel is exterior or not
     :param correct_direction: The direction of the panels
     :param part_length: the length of the part
     :param centre_coordinate:  the centre coordinate
@@ -97,14 +98,14 @@ def get_part_edges_coordinate(part_length, centre_coordinate, correct_direction,
     lowest_point = edges[0]
     highest_point = edges[1]
 
-    if layer_index == 1:
+    if exterior:  # exterior
         if correct_direction:
             coordinate_left_edge = lowest_point
             coordinate_right_edge = highest_point
         else:
             coordinate_left_edge = highest_point
             coordinate_right_edge = lowest_point
-    elif layer_index == 3:
+    else:  # interior
         if correct_direction:
             coordinate_left_edge = highest_point
             coordinate_right_edge = lowest_point
@@ -129,16 +130,12 @@ def convert_window_coordinate_to_index(part_index_edge, part_coordinate_edge, wi
 
     if part_coordinate_edge < 0 and window_coordinate_center < 0:
         index_difference = (part_coordinate_edge) - (window_coordinate_center)
-
         # Get absolute value of  the index
         index_difference = abs(index_difference)
 
-        print ("_____________________________\n")
-        print ("index_difference", index_difference)
-
         if exterior:  # exterior , the index difference is  subtracted from the left edge panel
             window_index_centre = part_index_edge - index_difference
-        elif not exterior:  # interior, the index difference is added to the right edge panel
+        else:  # interior, the index difference is added to the right edge panel
             window_index_centre = part_index_edge + index_difference
     else:
         print ("The script is faulty")

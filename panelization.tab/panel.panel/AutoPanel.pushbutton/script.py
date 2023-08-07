@@ -55,7 +55,7 @@ import clr
 
 clr.AddReference("System")
 from _create import _auto as a
-from _create import _get as g
+from _create import _parts as g
 
 import time
 import  random

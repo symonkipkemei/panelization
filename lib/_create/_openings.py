@@ -14,7 +14,7 @@ clr.AddReference("System")
 
 from _create import _auto as a
 from _create import _test as t
-from _create import _get as g
+from _create import _parts as g
 from _create import _coordinate as c
 
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> VARIABLES
@@ -30,25 +30,6 @@ active_level = doc.ActiveView.GenLevel
 
 
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> FUNCTIONS
-
-# ________________________________________________________________________________________________FAMILY CREATION
-
-def get_type_by_name(type_name):
-    """
-    abstract the symbol of a family by providing its name
-    :param type_name: Name of the family
-    :return: symbol
-    """
-    param_type = ElementId(BuiltInParameter.ALL_MODEL_TYPE_NAME)
-    f_param = ParameterValueProvider(param_type)
-    evaluator = FilterStringEquals()
-    f_rule = FilterStringRule(f_param, evaluator, type_name)
-
-    # create filter
-    filter_type_name = ElementParameterFilter(f_rule)
-    return FilteredElementCollector(doc).WherePasses(filter_type_name).WhereElementIsElementType().FirstElement()
-
-
 # ________________________________________________________________________________________________WINDOWS
 
 def get_window_width(window_id):
@@ -64,16 +45,15 @@ def get_window_width(window_id):
 
     return width
 
-
-def get_window_location(element_id):
+def get_window_xyz_centre(window_id):
     """
-    Abstract the XYZ origin coordinates of a window
-    :param element_id: id for the window
-    :return: xyz orgin location
+    Get centre of window
+    :param window_id:
+    :return:
     """
-    window = doc.GetElement(ElementId(element_id))
-    location = window.Location.Point
-    return location
+    window = doc.GetElement(window_id)
+    xyz_centre = window.Location.Point
+    return xyz_centre
 
 
 def get_window_edge_indexes(window_width, window_index):
@@ -207,16 +187,6 @@ def skip_out_range(edge, out_ranges, exterior=True):
     return edge
 
 
-def get_window_xyz_centre(window_id):
-    """
-    Get centre of window
-    :param window_id:
-    :return:
-    """
-    window = doc.GetElement(window_id)
-    xyz_centre = window.Location.Point
-    return xyz_centre
-
 
 def get_window_index_centre(__title__, part, window):
     """
@@ -279,3 +249,21 @@ def get_window_index_centre(__title__, part, window):
                                                                    )
 
     return window_centre_index
+
+
+# ________________________________________________________________________________________________FAMILY CREATION
+
+def get_type_by_name(type_name):
+    """
+    abstract the symbol of a family by providing its name
+    :param type_name: Name of the family
+    :return: symbol
+    """
+    param_type = ElementId(BuiltInParameter.ALL_MODEL_TYPE_NAME)
+    f_param = ParameterValueProvider(param_type)
+    evaluator = FilterStringEquals()
+    f_rule = FilterStringRule(f_param, evaluator, type_name)
+
+    # create filter
+    filter_type_name = ElementParameterFilter(f_rule)
+    return FilteredElementCollector(doc).WherePasses(filter_type_name).WhereElementIsElementType().FirstElement()

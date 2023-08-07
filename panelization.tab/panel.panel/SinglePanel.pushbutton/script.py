@@ -50,7 +50,7 @@ from Autodesk.Revit.DB import Transaction, Element, ElementId, FilteredElementCo
 from Autodesk.Revit.DB.Structure import StructuralType
 from Autodesk.Revit.UI.Selection import ObjectType
 
-from _create import _get as g
+from _create import _parts as g
 from _create import _auto as a
 
 import clr

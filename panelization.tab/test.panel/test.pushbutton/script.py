@@ -58,7 +58,7 @@ import clr
 clr.AddReference("System")
 
 from _create import _auto as a
-from _create import _get as g
+from _create import _parts as g
 from _create import _coordinate as c
 from _create import _openings as o
 
@@ -148,4 +148,4 @@ def test_window_width():
 
 
 if __name__ == "__main__":
-    test_window_width()
+    test_place_reveal_out_ranges()

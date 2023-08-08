@@ -9,19 +9,7 @@ Date  = 09.06.2023
 ___________________________________________________________
 Description:
 
-This tool will create multiple panel of 4' or less 
-by breaking down a Part into panels 
-
-Direction based on type of the Parts
-
-Exterior Parts  -> left to right
-Interior Parts  -> right to left
-Partition Parts -> right to left
-
-Laps based on type of Parts
-Exterior Parts  -> right lap
-Interior Parts  -> left lap
-Partition Parts -> left lap
+This tool will test the out ranges position of windows
 
 ___________________________________________________________
 How-to:

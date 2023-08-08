@@ -126,10 +126,13 @@ def convert_window_coordinate_to_index(part_index_edge, part_coordinate_edge, wi
     :return: The reveal index of the window at the centre
     """
 
+
+    #The position of the window coordinates relative to the coordinates of the edges
+
     window_index_centre = 0
 
-    if part_coordinate_edge < 0 and window_coordinate_center < 0:
-        index_difference = (part_coordinate_edge) - (window_coordinate_center)
+    if window_coordinate_center > part_coordinate_edge:
+        index_difference = (window_coordinate_center) - (part_coordinate_edge)
         # Get absolute value of  the index
         index_difference = abs(index_difference)
 
@@ -139,6 +142,16 @@ def convert_window_coordinate_to_index(part_index_edge, part_coordinate_edge, wi
             window_index_centre = part_index_edge + index_difference
     else:
         print ("The script is faulty")
+        index_difference = (part_coordinate_edge) - (window_coordinate_center)
+        index_difference = abs(index_difference)
+        if exterior:  # exterior , the index difference is  subtracted from the left edge panel
+            window_index_centre = part_index_edge - index_difference
+        else:  # interior, the index difference is added to the right edge panel
+            window_index_centre = part_index_edge + index_difference
+
+    print ("window coordinate centre", window_coordinate_center)
+    print ("part coordinate edge", part_coordinate_edge)
+    print ("window index centre",window_index_centre)
 
     return window_index_centre
 

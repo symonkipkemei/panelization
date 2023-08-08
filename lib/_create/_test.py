@@ -99,3 +99,30 @@ def test_element_origin(wall_origin):
         t.Commit()
 
     return element
+
+
+def test_window_centres(__title__):
+
+    global lap_type_id, side_of_wall
+    part = g.select_part()
+    hosted_wall_id = g.get_host_wall_id(part)
+
+    layer_index = g.get_layer_index(part)
+    left_lap_id = ElementId(352818)
+    right_lap_id = ElementId(352808)
+
+    if layer_index == 1:  # exterior
+        side_of_wall = WallSide.Exterior
+        lap_type_id = right_lap_id
+        exterior = True
+
+    elif layer_index == 3:  # interior
+        side_of_wall = WallSide.Interior
+        lap_type_id = left_lap_id
+        exterior = False
+
+    windows = o.get_hosted_windows(hosted_wall_id)
+    for window in windows:
+        window_index = o.get_window_index_centre(__title__, part, window)
+        a.auto_place_reveal(__title__, hosted_wall_id, lap_type_id, window_index, side_of_wall)
+

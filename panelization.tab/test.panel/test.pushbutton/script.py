@@ -69,3 +69,4 @@ active_level = doc.ActiveView.GenLevel
 
 if __name__ == "__main__":
     t.test_place_reveal_out_ranges(__title__)
+    #t.test_window_centres(__title__)

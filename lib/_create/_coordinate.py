@@ -141,7 +141,6 @@ def convert_window_coordinate_to_index(part_index_edge, part_coordinate_edge, wi
         else:  # interior, the index difference is added to the right edge panel
             window_index_centre = part_index_edge + index_difference
     else:
-        print ("The script is faulty")
         index_difference = (part_coordinate_edge) - (window_coordinate_center)
         index_difference = abs(index_difference)
         if exterior:  # exterior , the index difference is  subtracted from the left edge panel
@@ -149,12 +148,7 @@ def convert_window_coordinate_to_index(part_index_edge, part_coordinate_edge, wi
         else:  # interior, the index difference is added to the right edge panel
             window_index_centre = part_index_edge + index_difference
 
-    print ("window coordinate centre", window_coordinate_center)
-    print ("part coordinate edge", part_coordinate_edge)
-    print ("window index centre",window_index_centre)
-
     return window_index_centre
-
 
 def get_bounding_box_center(element):
     """

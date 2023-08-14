@@ -13,7 +13,7 @@ import clr
 clr.AddReference("System")
 
 from _create import _auto as a
-from _create import _test as t
+from _create import _test as tt
 from _create import _coordinate as c
 from _create import _openings as o
 
@@ -98,10 +98,26 @@ def get_edge_index(__title__, part, host_wall_id, lap_type_id, variable_distance
     part_length = part.get_Parameter(BuiltInParameter.DPART_LENGTH_COMPUTED).AsDouble()
 
     # split parts  by placing a reveal: old_part(retains the original part id), new_part (assigned a new part id)
+
     with Transaction(doc, __title__) as t:
-        t.Start()
-        fst_wall_sweep = a.auto_reveal(host_wall_id, lap_type_id, variable_distance, side_of_wall)
-        t.Commit()
+        try:
+            t.Start("PlacingReveal")
+            # get failure handling options
+            options = t.GetFailureHandlingOptions()
+            failureProcessor = tt.RevealWarningSwallower()
+            options.SetFailuresPreprocessor(failureProcessor)
+            t.SetFailureHandlingOptions(options)
+
+            fst_wall_sweep = a.auto_reveal(host_wall_id, lap_type_id, variable_distance, side_of_wall)
+            status = t.Commit()
+
+            if status != TransactionStatus.Committed:
+                if failureProcessor.HasError:
+                    TaskDialog.Show("ERROR", failureProcessor.FailureMessage)
+
+        except Exception as ex:
+            if t.GetStatus() == TransactionStatus.Started:
+                pass
 
     # get old_part_length ( part with original id)
     old_part_length_before_snd_reveal = part.get_Parameter(BuiltInParameter.DPART_LENGTH_COMPUTED).AsDouble()
@@ -227,7 +243,7 @@ def get_reveal_indexes_v2(left_edge, right_edge, out_ranges, exterior=True):
                     # the script now ends
                     break
         else:
-            right_edge += panelling_distance # panelization is right to left, the right edge increases towards the left edge
+            right_edge += panelling_distance  # panelization is right to left, the right edge increases towards the left edge
             # skipping the out range if there is a window
             right_edge = o.skip_out_range(right_edge, out_ranges, exterior=False)
             rem_length = left_edge - right_edge
@@ -316,5 +332,13 @@ def check_if_host_wall_edited(parts):
         if sketch == ElementId(-1):
             orthogonal_parts.append(part)
     return orthogonal_parts
+
+
+def get_part_length(part):
+    """
+    Abstract the length of selected part
+    :return: length
+    """
+    return part.get_Parameter(BuiltInParameter.DPART_LENGTH_COMPUTED).AsDouble()
 
 

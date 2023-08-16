@@ -13,7 +13,7 @@ import clr
 clr.AddReference("System")
 
 from _create import _auto as a
-from _create import _test as t
+from _create import _test as tt
 from _create import _parts as p
 from _create import _coordinate as c
 from _create import _openings as o
@@ -160,58 +160,30 @@ def test_split_parts(__title__):
         side_of_wall = WallSide.Interior
         exterior = False
 
-    # determine the reveal location at 0
-    variable_distance = 3
-    while True:
-        reveal = a.auto_place_reveal_v2(__title__, host_wall_id, lap_type_id, variable_distance, side_of_wall)
-        variable_distance -= 3
-        if reveal is not None:
-            break
-        elif variable_distance < -10:
-            print ("The variable distance could not be established")
-            break
+    variable_distance = p.get_variable_distance(__title__, part)
+    left_edge, right_edge = p.get_edge_index(__title__, part, host_wall_id, lap_type_id, variable_distance, side_of_wall)
 
+    out_ranges = []
+    reveal_indexes = p.get_reveal_indexes_v2(left_edge, right_edge, out_ranges, exterior)
 
-    # determine the coordinates of the reveal at o
-    reveal_xyz_coordinates = c.get_bounding_box_center(reveal)
-    x_axis_plane = c.determine_x_plane(host_wall_id)
-    reveal_plane_coordinate = c.get_plane_coordinate(reveal_xyz_coordinates, x_axis_plane)
-    print ("reveal_xyz_coordinates", reveal_xyz_coordinates)
+    for reveal in reveal_indexes:
+        a.auto_place_reveal(__title__, host_wall_id, lap_type_id, reveal, side_of_wall)
 
+def test_variable_distance(__title__):
+    part = p.select_part()
+    host_wall_id = p.get_host_wall_id(part)
+    layer_index = p.get_layer_index(part)
+    lap_type_id = 0
+    side_of_wall = None
+    exterior = None
+    if layer_index == 1:
+        lap_type_id = ElementId(352808)  # right_lap_id
+        side_of_wall = WallSide.Exterior
+        exterior = True
+    elif layer_index == 3:
+        lap_type_id = ElementId(352818)  # left_lap_id
+        side_of_wall = WallSide.Interior
+        exterior = False
 
-    # delete the reveal
-    with Transaction(doc, __title__) as t:
-        t.Start()
-        doc.Delete(reveal.Id)
-        t.Commit()
-
-    # determine the coordinates of the left edge and right edge
-    part_length = p.get_part_length(part)
-
-    part_centre_xyz_coordinates = c.get_bounding_box_center(part)
-    part_centre_coordinate = c.get_plane_coordinate(part_centre_xyz_coordinates, x_axis_plane)
-    correct_direction = True  # correct direction set as True, determining direction would result to using reveal
-    # indexes, we don't know the position of the reveal indexes yet, we will figure the correct direction later
-    edge_1, edge_2 = c.get_part_edges_coordinate(part_length, part_centre_coordinate, correct_direction,
-                                                              exterior)
-
-    #coordinate at edge 0
-    reveal_plane_coordinate = reveal_plane_coordinate - (variable_distance)
-
-    print ("revel_plane_coordinate", reveal_plane_coordinate)
-
-    # determine which direction is closer to the reveal coordinate
-    dif = abs(reveal_plane_coordinate - (part_centre_coordinate))
-
-
-    print("part_centre_coordinate",part_centre_coordinate)
-
-    print ("difference", dif)
-    variable_distance = dif
-    print ("variable distance", variable_distance)
-    reveal = a.auto_place_reveal(__title__, host_wall_id, lap_type_id, variable_distance, side_of_wall)
-
-
-    print ("left_edge_co", edge_1)
-    print ("right_edge_co", edge_2)
-
+    variable_distance = p.get_variable_distance(__title__, part)
+    a.auto_place_reveal(__title__, host_wall_id, lap_type_id, variable_distance, side_of_wall)

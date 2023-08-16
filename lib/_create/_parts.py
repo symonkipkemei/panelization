@@ -99,27 +99,13 @@ def get_edge_index(__title__, part, host_wall_id, lap_type_id, variable_distance
 
     # split parts  by placing a reveal: old_part(retains the original part id), new_part (assigned a new part id)
 
+    # fst_wall_sweep
     with Transaction(doc, __title__) as t:
-        try:
-            t.Start("PlacingReveal")
-            # get failure handling options
-            options = t.GetFailureHandlingOptions()
-            failureProcessor = tt.RevealWarningSwallower()
-            options.SetFailuresPreprocessor(failureProcessor)
-            t.SetFailureHandlingOptions(options)
+        t.Start()
+        fst_wall_sweep = a.auto_reveal(host_wall_id, lap_type_id, variable_distance, side_of_wall)
+        t.Commit()
 
-            fst_wall_sweep = a.auto_reveal(host_wall_id, lap_type_id, variable_distance, side_of_wall)
-            status = t.Commit()
-
-            if status != TransactionStatus.Committed:
-                if failureProcessor.HasError:
-                    TaskDialog.Show("ERROR", failureProcessor.FailureMessage)
-
-        except Exception as ex:
-            if t.GetStatus() == TransactionStatus.Started:
-                pass
-
-    # get old_part_length ( part with original id)
+        # get old_part_length ( part with original id)
     old_part_length_before_snd_reveal = part.get_Parameter(BuiltInParameter.DPART_LENGTH_COMPUTED).AsDouble()
 
     # create snd wall sweep
@@ -340,5 +326,78 @@ def get_part_length(part):
     :return: length
     """
     return part.get_Parameter(BuiltInParameter.DPART_LENGTH_COMPUTED).AsDouble()
+
+
+def get_variable_distance(__title__, part):
+    """
+    Determine the variable distance to be used
+    :param part: Part to be panelized
+    :param __title__: tool title
+    :return: variable distance
+    """
+
+    host_wall_id = get_host_wall_id(part)
+    layer_index = get_layer_index(part)
+    lap_type_id = 0
+    side_of_wall = None
+    exterior = None
+    if layer_index == 1:
+        lap_type_id = ElementId(352808)  # right_lap_id
+        side_of_wall = WallSide.Exterior
+        exterior = True
+    elif layer_index == 3:
+        lap_type_id = ElementId(352818)  # left_lap_id
+        side_of_wall = WallSide.Interior
+        exterior = False
+
+    # determine the reveal location at 0
+    variable_distance = 3
+
+
+    while True:
+        reveal = a.auto_place_reveal_v2(__title__, host_wall_id, lap_type_id, variable_distance, side_of_wall)
+        if reveal is not None:
+            break
+        elif variable_distance < -10:
+            print ("The variable distance could not be established")
+            break
+        variable_distance -= 3
+
+    # determine the coordinates of the reveal at o
+    reveal_xyz_coordinates = c.get_bounding_box_center(reveal)
+    x_axis_plane = c.determine_x_plane(host_wall_id)
+    reveal_plane_coordinate = c.get_plane_coordinate(reveal_xyz_coordinates, x_axis_plane)
+
+    reveal_plane_coordinate = float(reveal_plane_coordinate) - (variable_distance)  # to determine coordinate at 0
+
+    # delete the reveal after abstracting the coordinate
+    with Transaction(doc, __title__) as t:
+        t.Start()
+        doc.Delete(reveal.Id)
+        t.Commit()
+
+    # determine the coordinates of the centre of the part
+    part_centre_xyz_coordinates = c.get_bounding_box_center(part)
+    part_centre_coordinate = c.get_plane_coordinate(part_centre_xyz_coordinates, x_axis_plane)
+
+    # determine the difference between two
+    if reveal_plane_coordinate > part_centre_coordinate:
+        dif = abs(reveal_plane_coordinate - (part_centre_coordinate)) + (variable_distance + variable_distance)
+        direction = False
+    else:
+        dif = abs(reveal_plane_coordinate - (part_centre_coordinate))
+        direction = True
+
+
+    # coordinates and their behaviour
+    print("reveal coordinate", reveal_plane_coordinate)
+    print ("centre coordinate", part_centre_coordinate)
+
+    # indexes and their behaviour
+    print ("reveal index", 0)
+    print ("parts indexes", dif)
+
+
+    return dif, direction
 
 

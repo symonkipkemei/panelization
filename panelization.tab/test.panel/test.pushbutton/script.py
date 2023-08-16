@@ -68,6 +68,7 @@ active_level = doc.ActiveView.GenLevel
 
 
 if __name__ == "__main__":
-    t.test_split_parts(__title__)
+    t.test_variable_distance(__title__)
+
 
 

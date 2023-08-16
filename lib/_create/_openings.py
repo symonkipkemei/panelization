@@ -137,7 +137,7 @@ def get_hosted_windows_out_range(__title__, part):
         window_center_index = get_window_index_centre(__title__, part, window)
         window_width = get_window_width(window.Id)
         if window_width <= 4:
-            displacement = 0.5
+            displacement = 1
         else:
             displacement = 1
 

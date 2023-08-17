@@ -93,6 +93,7 @@ def auto_place_reveal_v2(__title__, host_wall_id, lap_type_id, variable_distance
             if status != TransactionStatus.Committed:
                 if failureProcessor.HasError:
                     TaskDialog.Show("ERROR", failureProcessor.FailureMessage)
+                    return None
 
         except Exception as ex:
             if t.GetStatus() == TransactionStatus.Started:

@@ -164,7 +164,7 @@ def get_bounding_box_center(element):
 
         centre = (maximum + minimum) / 2
     else:
-        print ("Error generating reveal centres")
+        print ("Bounding box is none, error generating the centre")
         centre = None
 
     return centre

@@ -187,3 +187,25 @@ def test_variable_distance(__title__):
 
     variable_distance = p.get_variable_distance(__title__, part)
     a.auto_place_reveal(__title__, host_wall_id, lap_type_id, variable_distance, side_of_wall)
+
+
+def test_left_edge(__title__):
+    part = p.select_part()
+    host_wall_id = p.get_host_wall_id(part)
+    layer_index = p.get_layer_index(part)
+    lap_type_id = 0
+    side_of_wall = None
+    exterior = None
+    if layer_index == 1:
+        lap_type_id = ElementId(352808)  # right_lap_id
+        side_of_wall = WallSide.Exterior
+        exterior = True
+    elif layer_index == 3:
+        lap_type_id = ElementId(352818)  # left_lap_id
+        side_of_wall = WallSide.Interior
+        exterior = False
+
+    centre_index, direction = p.get_variable_distance(__title__, part)
+    length = p.get_part_length(part)
+    left_edge, right_edge = p.get_part_edges_v2(length, centre_index, direction)
+    a.auto_place_reveal(__title__, host_wall_id, lap_type_id, left_edge, side_of_wall)

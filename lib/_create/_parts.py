@@ -351,7 +351,7 @@ def get_variable_distance(__title__, part):
         exterior = False
 
     # determine the reveal location at 0
-    variable_distance = 3
+    variable_distance = 2
 
 
     while True:
@@ -363,12 +363,15 @@ def get_variable_distance(__title__, part):
             break
         variable_distance -= 3
 
+    print ("Variable distance", variable_distance)
+
     # determine the coordinates of the reveal at o
     reveal_xyz_coordinates = c.get_bounding_box_center(reveal)
     x_axis_plane = c.determine_x_plane(host_wall_id)
     reveal_plane_coordinate = c.get_plane_coordinate(reveal_xyz_coordinates, x_axis_plane)
 
-    reveal_plane_coordinate = float(reveal_plane_coordinate) - (variable_distance)  # to determine coordinate at 0
+    reveal_plane_coordinate = float(reveal_plane_coordinate)   # to determine coordinate at 0
+    print ("reveal plane coordinate", reveal_xyz_coordinates)
 
     # delete the reveal after abstracting the coordinate
     with Transaction(doc, __title__) as t:
@@ -378,14 +381,17 @@ def get_variable_distance(__title__, part):
 
     # determine the coordinates of the centre of the part
     part_centre_xyz_coordinates = c.get_bounding_box_center(part)
+    print ("part_centre_xyz_coordinates",part_centre_xyz_coordinates)
+    # some parts are exhibiting the wrong centres
+
     part_centre_coordinate = c.get_plane_coordinate(part_centre_xyz_coordinates, x_axis_plane)
 
     # determine the difference between two
     if reveal_plane_coordinate > part_centre_coordinate:
-        dif = abs(reveal_plane_coordinate - (part_centre_coordinate)) + (variable_distance + variable_distance)
+        dif = (reveal_plane_coordinate - (part_centre_coordinate)) + variable_distance # the distance
         direction = False
     else:
-        dif = abs(reveal_plane_coordinate - (part_centre_coordinate))
+        dif = (part_centre_coordinate - (reveal_plane_coordinate)) + variable_distance
         direction = True
 
 
@@ -398,6 +404,17 @@ def get_variable_distance(__title__, part):
     print ("parts indexes", dif)
 
 
-    return dif, direction
+    return dif
 
+def get_part_edges_v2(length, centre_index, direction):
+    half_length = length/2
+    edge_1 = centre_index + half_length
+    edge_2 = centre_index - half_length
 
+    ordered_edges = [edge_1, edge_2]
+    sorted(ordered_edges)
+
+    left_edge = ordered_edges[0]
+    right_edge = ordered_edges[1]
+
+    return  left_edge, right_edge

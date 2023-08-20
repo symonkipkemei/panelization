@@ -351,7 +351,7 @@ def get_variable_distance(__title__, part):
         exterior = False
 
     # determine the reveal location at 0
-    variable_distance = 5
+    variable_distance = 1
 
     while True:
         reveal = a.auto_place_reveal_v2(__title__, host_wall_id, lap_type_id, variable_distance, side_of_wall)
@@ -369,6 +369,7 @@ def get_variable_distance(__title__, part):
     reveal_plane_coordinate = c.get_plane_coordinate(reveal_xyz_coordinates, x_axis_plane)
 
     reveal_plane_coordinate = float(reveal_plane_coordinate)   # to determine coordinate at 0
+    reveal_plane_coordinate = reveal_plane_coordinate - (variable_distance)
 
     # delete the reveal after abstracting the coordinate
     with Transaction(doc, __title__) as t:
@@ -382,24 +383,26 @@ def get_variable_distance(__title__, part):
     # some parts are exhibiting the wrong centres
 
     part_centre_coordinate = c.get_plane_coordinate(part_centre_xyz_coordinates, x_axis_plane)
+    part_centre_coordinate = float(part_centre_coordinate)
+
 
     # determine the difference between two
     if reveal_plane_coordinate > part_centre_coordinate:
-        dif = (reveal_plane_coordinate - (part_centre_coordinate)) + variable_distance # the distance
+        dif = (part_centre_coordinate -(reveal_plane_coordinate)) # the distance
         reveal_on_left_side = False
     else:
-        dif = (part_centre_coordinate - (reveal_plane_coordinate)) + variable_distance
+        dif = (part_centre_coordinate - (reveal_plane_coordinate))
         reveal_on_left_side = True
 
 
     # Test parameters
     print ("Variable distance", variable_distance)
-    #print ("reveal plane coordinate", reveal_xyz_coordinates)
-    #print ("part_centre_xyz_coordinates", part_centre_xyz_coordinates)
-    #print("reveal coordinate", reveal_plane_coordinate)
-    #print ("centre coordinate", part_centre_coordinate)
-    #print ("reveal index", 0)
-    #print ("parts indexes", dif)
+    print ("reveal plane coordinate", reveal_xyz_coordinates  )
+    print ("part_centre_xyz_coordinates", part_centre_xyz_coordinates)
+    print("reveal coordinate", reveal_plane_coordinate )
+    print ("centre coordinate", part_centre_coordinate)
+    print ("reveal index", 0)
+    print ("parts indexes", dif)
     print ("Reveal on left side", reveal_on_left_side)
 
     return dif

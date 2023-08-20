@@ -161,13 +161,15 @@ def test_split_parts(__title__):
         exterior = False
 
     variable_distance = p.get_variable_distance(__title__, part)
-    left_edge, right_edge = p.get_edge_index(__title__, part, host_wall_id, lap_type_id, variable_distance, side_of_wall)
+    left_edge, right_edge = p.get_edge_index(__title__, part, host_wall_id, lap_type_id, variable_distance,
+                                             side_of_wall)
 
     out_ranges = []
     reveal_indexes = p.get_reveal_indexes_v2(left_edge, right_edge, out_ranges, exterior)
 
     for reveal in reveal_indexes:
         a.auto_place_reveal(__title__, host_wall_id, lap_type_id, reveal, side_of_wall)
+
 
 def test_variable_distance(__title__):
     part = p.select_part()
@@ -185,7 +187,7 @@ def test_variable_distance(__title__):
         side_of_wall = WallSide.Interior
         exterior = False
 
-    variable_distance = p.get_variable_distance(__title__, part)
+    variable_distance = p.get_centre_index(__title__, part)
     a.auto_place_reveal(__title__, host_wall_id, lap_type_id, variable_distance, side_of_wall)
 
 
@@ -205,7 +207,59 @@ def test_left_edge(__title__):
         side_of_wall = WallSide.Interior
         exterior = False
 
-    centre_index, direction = p.get_variable_distance(__title__, part)
+    centre_index = p.get_centre_index(__title__, part)
     length = p.get_part_length(part)
-    left_edge, right_edge = p.get_part_edges_v2(length, centre_index, direction)
-    a.auto_place_reveal(__title__, host_wall_id, lap_type_id, left_edge, side_of_wall)
+    left_edge, right_edge = p.get_part_edges_v2(length, centre_index)
+    out_ranges = []
+    reveal_indexes = p.get_reveal_indexes_v2(left_edge, right_edge, out_ranges, exterior=True)
+
+    with Transaction(doc, __title__) as t:
+        t.Start()
+        for reveal in reveal_indexes:
+            a.auto_reveal(host_wall_id, lap_type_id, reveal, side_of_wall)
+        t.Commit()
+
+
+def test_direction(__title__):
+    """test direction by placing two reveals and abstracting their coordinates for comparison"""
+    part = p.select_part()
+    host_wall_id = p.get_host_wall_id(part)
+    layer_index = p.get_layer_index(part)
+    lap_type_id = 0
+    side_of_wall = None
+    exterior = None
+    x_axis_plane = c.determine_x_plane(host_wall_id)
+    if layer_index == 1:
+        lap_type_id = ElementId(352808)  # right_lap_id
+        side_of_wall = WallSide.Exterior
+        exterior = True
+    elif layer_index == 3:
+        lap_type_id = ElementId(352818)  # left_lap_id
+        side_of_wall = WallSide.Interior
+        exterior = False
+
+    reveal_1 = a.auto_place_reveal_v2(__title__, host_wall_id, lap_type_id, 1, side_of_wall)
+    reveal_2 = a.auto_place_reveal_v2(__title__, host_wall_id, lap_type_id, 2, side_of_wall)
+    reveal_4 = a.auto_place_reveal_v2(__title__, host_wall_id, lap_type_id, 4, side_of_wall)
+
+    # reveal 1 coordinates
+    reveal_xyz_coordinates_1 = c.get_bounding_box_center(reveal_1)
+    reveal_plane_coordinate_1 = c.get_plane_coordinate(reveal_xyz_coordinates_1, x_axis_plane)
+    reveal_plane_coordinate_1 = float(reveal_plane_coordinate_1)  # to determine coordinate at 0
+
+    # reveal 2 coordinates
+    reveal_xyz_coordinates_2 = c.get_bounding_box_center(reveal_2)
+    reveal_plane_coordinate_2 = c.get_plane_coordinate(reveal_xyz_coordinates_2, x_axis_plane)
+    reveal_plane_coordinate_2 = float(reveal_plane_coordinate_2)  # to determine coordinate at 0
+
+    # reveal 4 coordinates
+    reveal_xyz_coordinates_4 = c.get_bounding_box_center(reveal_4)
+    reveal_plane_coordinate_4 = c.get_plane_coordinate(reveal_xyz_coordinates_4, x_axis_plane)
+    reveal_plane_coordinate_4 = float(reveal_plane_coordinate_4)  # to determine coordinate at 0
+
+
+
+    print ("reveal plane coordinate 1", reveal_plane_coordinate_1)
+    print ("reveal plane coordinate 2", reveal_plane_coordinate_2)
+    print ("reveal plane coordinate 4", reveal_plane_coordinate_4)
+

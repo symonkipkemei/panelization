@@ -4,14 +4,14 @@
 ################################################################################################################################
 
 
-__title__ = "AutoReveal"
+__title__ = "SplitPanel"
 
 __doc__ = """ Version  1.1
-Date  = 09.06.2023
+Date  = 20.08.2023
 ___________________________________________________________
 Description:
 
-This tool will auto place reveals on a selected Part
+This tool will auto split panels into two equal parts
 
 ___________________________________________________________
 How-to:
@@ -20,11 +20,7 @@ How-to:
 -> Select a Part
 ___________________________________________________________
 last update:
-- [01.07.2023] - 1.1 RELEASE
-
-___________________________________________________________
-To-Do:
--> a form to allow the user adjust the distance from 0
+- [20.08.2023] - 1.1 RELEASE
 ___________________________________________________________
 Author: Symon Kipkemei
 
@@ -34,7 +30,7 @@ __author__ = "Symon Kipkemei"
 __helpurl__ = "https://www.linkedin.com/in/symon-kipkemei/"
 __highlight__ = 'new'
 __min_revit_ver__ = 2020
-__max_revit_ver__ = 2023
+__max_revit_ver__ = 2024
 
 # IMPORTS
 
@@ -68,21 +64,17 @@ def main():
     right_lap_id = ElementId(352808)
 
     variable_distance = 4
+    distance = g.get_centre_index(__title__, part)
 
     if layer_index == 1:  # exterior face
         side_of_wall = WallSide.Exterior
         lap_type_id = right_lap_id
-        a.auto_place_reveal(__title__, host_wall_id,lap_type_id,variable_distance, side_of_wall)
-
-    elif layer_index == 2:  # interior face of partition walls
-        side_of_wall = WallSide.Interior
-        lap_type_id = left_lap_id
-        a.auto_place_reveal(__title__, host_wall_id, lap_type_id, variable_distance, side_of_wall)
+        a.auto_place_reveal(__title__, host_wall_id,lap_type_id, distance, side_of_wall)
 
     elif layer_index == 3:  # interior face
         side_of_wall = WallSide.Interior
         lap_type_id = left_lap_id
-        a.auto_place_reveal(__title__, host_wall_id, lap_type_id, variable_distance, side_of_wall)
+        a.auto_place_reveal(__title__, host_wall_id, lap_type_id, distance, side_of_wall)
 
 
 if __name__ == "__main__":

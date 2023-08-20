@@ -328,7 +328,7 @@ def get_part_length(part):
     return part.get_Parameter(BuiltInParameter.DPART_LENGTH_COMPUTED).AsDouble()
 
 
-def get_variable_distance(__title__, part):
+def get_centre_index(__title__, part):
     """
     Determine the variable distance to be used
     :param part: Part to be panelized
@@ -336,11 +336,14 @@ def get_variable_distance(__title__, part):
     :return: variable distance
     """
 
+    global lowest_point_left
+
     host_wall_id = get_host_wall_id(part)
     layer_index = get_layer_index(part)
     lap_type_id = 0
     side_of_wall = None
     exterior = None
+    x_axis_plane = c.determine_x_plane(host_wall_id)
     if layer_index == 1:
         lap_type_id = ElementId(352808)  # right_lap_id
         side_of_wall = WallSide.Exterior
@@ -351,77 +354,92 @@ def get_variable_distance(__title__, part):
         exterior = False
 
     # determine the reveal location at 0
-    variable_distance = 1
+    variable_distance = -3
 
     while True:
-        reveal = a.auto_place_reveal_v2(__title__, host_wall_id, lap_type_id, variable_distance, side_of_wall)
-        print (reveal)
-        if reveal is not None:
+        reveal_1 = a.auto_place_reveal_v2(__title__, host_wall_id, lap_type_id, variable_distance, side_of_wall)
+        print ("reveal_1", reveal_1)
+        if reveal_1 is not None:
             break
         elif variable_distance < -10:
             print ("The variable distance could not be established")
             break
         variable_distance -= 3
 
-    # determine the coordinates of the reveal at o
-    reveal_xyz_coordinates = c.get_bounding_box_center(reveal)
-    x_axis_plane = c.determine_x_plane(host_wall_id)
-    reveal_plane_coordinate = c.get_plane_coordinate(reveal_xyz_coordinates, x_axis_plane)
+    # create snd wall sweep
+    move_distance = 0.166667  # 1/4", small distance to ensure part is cut
+    reveal_2 = a.auto_place_reveal_v2(__title__, host_wall_id, lap_type_id, variable_distance + move_distance,
+                                      side_of_wall)
 
-    reveal_plane_coordinate = float(reveal_plane_coordinate)   # to determine coordinate at 0
-    reveal_plane_coordinate = reveal_plane_coordinate - (variable_distance)
+    # reveal 1 coordinates
+    reveal_xyz_coordinates_1 = c.get_bounding_box_center(reveal_1)
+    reveal_plane_coordinate_1 = c.get_plane_coordinate(reveal_xyz_coordinates_1, x_axis_plane)
+    reveal_plane_coordinate_1 = float(reveal_plane_coordinate_1)  # to determine coordinate at 0
+
+    # reveal 2 coordinates
+    reveal_xyz_coordinates_2 = c.get_bounding_box_center(reveal_2)
+    reveal_plane_coordinate_2 = c.get_plane_coordinate(reveal_xyz_coordinates_2, x_axis_plane)
+    reveal_plane_coordinate_2 = float(reveal_plane_coordinate_2)  # to determine coordinate at 0
+
+    # reveal coordinates at 0
+    if reveal_plane_coordinate_2 < reveal_plane_coordinate_1:
+        reveal_plane_coordinate_0 = reveal_plane_coordinate_1 + variable_distance
+    else:
+        reveal_plane_coordinate_0 = reveal_plane_coordinate_1 - variable_distance
 
     # delete the reveal after abstracting the coordinate
     with Transaction(doc, __title__) as t:
         t.Start()
-        doc.Delete(reveal.Id)
+        doc.Delete(reveal_1.Id)
+        doc.Delete(reveal_2.Id)
         t.Commit()
 
     # determine the coordinates of the centre of the part
     part_centre_xyz_coordinates = c.get_bounding_box_center(part)
-
     # some parts are exhibiting the wrong centres
-
     part_centre_coordinate = c.get_plane_coordinate(part_centre_xyz_coordinates, x_axis_plane)
     part_centre_coordinate = float(part_centre_coordinate)
 
-
     # determine the difference between two
-    if reveal_plane_coordinate > part_centre_coordinate:
-        dif = (part_centre_coordinate -(reveal_plane_coordinate)) # the distance
-        reveal_on_left_side = False
+    if reveal_plane_coordinate_0 > part_centre_coordinate:
+        dif = (reveal_plane_coordinate_0 - part_centre_coordinate)  # the distance
     else:
-        dif = (part_centre_coordinate - (reveal_plane_coordinate))
-        reveal_on_left_side = True
-
+        dif = (part_centre_coordinate - reveal_plane_coordinate_0)
 
     # Test parameters
     print ("Variable distance", variable_distance)
-    print ("reveal plane coordinate", reveal_xyz_coordinates  )
-    print ("part_centre_xyz_coordinates", part_centre_xyz_coordinates)
-    print("reveal coordinate", reveal_plane_coordinate )
-    print ("centre coordinate", part_centre_coordinate)
+    # print ("reveal plane coordinate", reveal_xyz_coordinates)
+    # print ("part_centre_xyz_coordinates", part_centre_xyz_coordinates)
+    # print("reveal coordinate", reveal_plane_coordinate_0)
+    # print ("centre coordinate", part_centre_coordinate)
     print ("reveal index", 0)
     print ("parts indexes", dif)
-    print ("Reveal on left side", reveal_on_left_side)
 
     return dif
 
-def get_part_edges_v2(length, centre_index, reveal_on_left_side):
-    half_length = length/2
+
+def get_part_edges_v2(length, centre_index):
+    """
+    All index at O are closer to the right edge than the left
+    :param length:
+    :param centre_index:
+    :return:
+    """
+    half_length = length / 2
     edge_1 = centre_index + half_length
     edge_2 = centre_index - half_length
 
-    ordered_edges = [edge_1, edge_2]
-    sorted(ordered_edges)
+    diff_1 = abs(edge_1 - 0)
+    diff_2 = abs(edge_2 - 0)
 
-    if reveal_on_left_side:
-        left_edge = ordered_edges[0]
-        right_edge = ordered_edges[1]
-
+    if diff_2 < diff_1:
+        right_edge = edge_2 # the smaller the difference the closer to the right edge
+        left_edge = edge_1
     else:
-        left_edge = ordered_edges[1]
-        right_edge = ordered_edges[0]
+        right_edge = edge_1
+        left_edge = edge_2
 
+    print ("left edge", left_edge)
+    print ("right edge", right_edge)
 
-    return  left_edge, right_edge
+    return left_edge, right_edge

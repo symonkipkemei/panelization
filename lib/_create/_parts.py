@@ -81,6 +81,22 @@ def select_part():
         print("Select a Part for it to be multi-panelized, you've selected", type(part))
 
 
+def select_parts():
+    """Selects parts from the uidoc
+    :return: returns a list of parts
+    """
+
+    # select part element
+    references = uidoc.Selection.PickObjects(ObjectType.Element)
+
+    parts = []
+    for reference in references:
+        part = uidoc.Document.GetElement(reference)
+        parts.append(part)
+
+    return parts
+
+
 def get_edge_index(__title__, part, host_wall_id, lap_type_id, variable_distance, side_of_wall):
     """
     Get the edge indexes ( left and right) when a part is selected.
@@ -354,7 +370,7 @@ def get_centre_index(__title__, part):
         exterior = False
 
     # determine the reveal location at 0
-    variable_distance = -3
+    variable_distance = 3
 
     while True:
         reveal_1 = a.auto_place_reveal_v2(__title__, host_wall_id, lap_type_id, variable_distance, side_of_wall)

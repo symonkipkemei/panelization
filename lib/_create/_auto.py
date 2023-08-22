@@ -49,8 +49,8 @@ def auto_reveal(host_wall_id, lap_type_id, variable_distance, side_of_wall):
     wallSweepTypeId = lap_type_id  # ElementId(352808)
 
     wallSweepInfo = WallSweepInfo(wallSweepType, True)
-    wallSweepInfo.CutsWall = False
-    wallSweepInfo.IsCutByInserts = False
+    wallSweepInfo.CutsWall = True
+    wallSweepInfo.IsCutByInserts = True
     wallSweepInfo.Distance = variable_distance
     wallSweepInfo.WallSide = side_of_wall  # WallSide.Exterior
     wallSweepInfo.DistanceMeasuredFrom = DistanceMeasuredFrom.Base
@@ -91,14 +91,14 @@ def auto_place_reveal_v2(__title__, host_wall_id, lap_type_id, variable_distance
             status = t.Commit()
 
             if status != TransactionStatus.Committed:
-                if failureProcessor.HasError:
-                    TaskDialog.Show("ERROR", failureProcessor.FailureMessage)
-                    return None
+                    reveal = None
 
         except Exception as ex:
             if t.GetStatus() == TransactionStatus.Started:
                 pass
             reveal = None
+
+    print (reveal)
 
     return reveal
 

@@ -136,11 +136,10 @@ class RevealWarningSwallower(IFailuresPreprocessor):
             failID = failure.GetFailureDefinitionId()
             # prevent Revit from showing Unenclosed room warnings
             if failID == BuiltInFailures.SweepFailures.CannotDrawSweep:
-                print ("warning deletion")
                 failuresAccessor.DeleteWarning(failure)
             else:
                 failuresAccessor.DeleteWarning(failure)
-                print ("Continue irregardless")
+
         return FailureProcessingResult.Continue
 
 

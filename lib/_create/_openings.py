@@ -215,8 +215,9 @@ def get_window_index_centre(__title__, part, window):
         lap_type_id = ElementId(352818)  # left_lap_id
         exterior = False
 
-    left_edge_index, right_edge_index = g.get_edge_index(__title__, part, hosted_wall_id, lap_type_id,
-                                                         variable_distance, side_of_wall)
+    centre_index = g.get_centre_index(__title__, part)
+    part_length = g.get_part_length(part)
+    left_edge_index, right_edge_index = g.get_edge_index_v2(part_length, centre_index)
 
     # get the direction of each panel
     direction = c.get_panel_direction(__title__, hosted_wall_id, lap_type_id, left_edge_index, right_edge_index,

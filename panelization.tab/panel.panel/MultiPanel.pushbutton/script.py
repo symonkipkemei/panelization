@@ -72,13 +72,11 @@ active_level = doc.ActiveView.GenLevel
 
 
 def main():
-    try:
-        parts = g.select_parts()
-        # part = g.check_if_part_panelized(part)
-        for part in parts:
-            a.auto_parts(__title__, part)
-    except ValueError:
-        print ("The selected part has be done manually at the moment, cannot be cut reveals")
+
+    parts = g.select_parts()
+    # part = g.check_if_part_panelized(part)
+    for part in parts:
+        a.auto_parts(__title__, part)
 
 
 if __name__ == "__main__":

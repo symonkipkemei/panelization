@@ -131,7 +131,6 @@ class RevealWarningSwallower(IFailuresPreprocessor):
         failList = failuresAccessor.GetFailureMessages()
 
         for failure in failList:
-            print ("failure", failure)
             # check FailureDefinitionIds against ones that you want to dismiss
             failID = failure.GetFailureDefinitionId()
             # prevent Revit from showing Unenclosed room warnings
@@ -208,7 +207,7 @@ def test_left_edge(__title__):
 
     centre_index = p.get_centre_index(__title__, part)
     length = p.get_part_length(part)
-    left_edge, right_edge = p.get_part_edges_v2(length, centre_index)
+    left_edge, right_edge = p.get_edge_index_v2(length, centre_index)
     out_ranges = []
     reveal_indexes = p.get_reveal_indexes_v2(left_edge, right_edge, out_ranges, exterior=True)
 
@@ -261,4 +260,31 @@ def test_direction(__title__):
     print ("reveal plane coordinate 1", reveal_plane_coordinate_1)
     print ("reveal plane coordinate 2", reveal_plane_coordinate_2)
     print ("reveal plane coordinate 4", reveal_plane_coordinate_4)
+
+
+def test_reveal_distance(__title__):
+    """
+    Investigate the characteristics of a reveal that cuts through a part and one that does not
+    :return:
+    """
+
+    part = p.select_part()
+    host_wall_id = p.get_host_wall_id(part)
+    layer_index = p.get_layer_index(part)
+    lap_type_id = 0
+    side_of_wall = None
+    exterior = None
+    if layer_index == 1:
+        lap_type_id = ElementId(352808)  # right_lap_id
+        side_of_wall = WallSide.Exterior
+        exterior = True
+    elif layer_index == 3:
+        lap_type_id = ElementId(352818)  # left_lap_id
+        side_of_wall = WallSide.Interior
+        exterior = False
+
+    variable_distance = 3
+
+    a.auto_place_reveal_v2(__title__, host_wall_id, lap_type_id, variable_distance,side_of_wall)
+
 

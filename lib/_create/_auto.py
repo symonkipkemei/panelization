@@ -91,14 +91,12 @@ def auto_place_reveal_v2(__title__, host_wall_id, lap_type_id, variable_distance
             status = t.Commit()
 
             if status != TransactionStatus.Committed:
-                    reveal = None
+                print ("could not continue")
 
         except Exception as ex:
             if t.GetStatus() == TransactionStatus.Started:
                 pass
             reveal = None
-
-    print (reveal)
 
     return reveal
 
@@ -134,84 +132,38 @@ def auto_parts(__title__, part):
     :param __title__: tool title
     :return: None
     """
+    global exterior, lap_type_id, side_of_wall
     host_wall_id = g.get_host_wall_id(part)
     host_wall_type_id = g.get_host_wall_type_id(host_wall_id)
     layer_index = g.get_layer_index(part)
     left_lap_id = ElementId(352818)
     right_lap_id = ElementId(352808)
 
-    variable_distance = 3
-    # I_E_wall_types
-    # BamCore 8" Separate I-E
-    # BamCore 5" Separate I-E
-    # BamCore 6 " Separate I-E
-    # BamCore 8" Separate I-E 1 HR
-    # BamCore 9 3/4" Seperate I-E
-
     I_E_wall_types = [ElementId(384173), ElementId(391917), ElementId(391949), ElementId(391949), ElementId(391971)]
-    # I_wall_types
-    # BamCore 8" Int Only
     I_wall_types = [ElementId(400084)]
-
-    # filter non-edited wall
 
     if host_wall_type_id not in I_wall_types:
         if layer_index == 1:  # exterior face
             side_of_wall = WallSide.Exterior
             lap_type_id = right_lap_id
-
-            left_edge, right_edge = g.get_edge_index(__title__, part, host_wall_id, lap_type_id, variable_distance,
-                                                     side_of_wall)
-            out_ranges = o.get_hosted_windows_out_range(__title__, part)
-            reveal_indexes = g.get_reveal_indexes_v2(left_edge, right_edge, out_ranges, exterior=True)
-            auto_panel(__title__, host_wall_id, lap_type_id, reveal_indexes, side_of_wall)
+            exterior = True
 
         elif layer_index == 3:  # interior face
             side_of_wall = WallSide.Interior
             lap_type_id = left_lap_id
-
-            left_edge, right_edge = g.get_edge_index(__title__, part, host_wall_id, lap_type_id, variable_distance,
-                                                     side_of_wall)
-            out_ranges = o.get_hosted_windows_out_range(__title__, part)
-            reveal_indexes = g.get_reveal_indexes_v2(left_edge, right_edge, out_ranges, exterior=False)
-            auto_panel(__title__, host_wall_id, lap_type_id, reveal_indexes, side_of_wall)
+            exterior = False
 
     elif host_wall_type_id in I_wall_types:
         if layer_index == 2:  # interior face of partition walls, ignore layer-index 1 (the core)
             side_of_wall = WallSide.Interior
             lap_type_id = left_lap_id
-            left_edge, right_edge = g.get_edge_index(__title__, part, host_wall_id, lap_type_id, variable_distance,
-                                                     side_of_wall)
+            exterior = False
 
-            reveal_indexes = g.get_reveal_indexes(left_edge, right_edge, exterior=False)
-            auto_panel(__title__, host_wall_id, lap_type_id, reveal_indexes, side_of_wall)
-
-    else:
-        print ("This Wall type not recognized by the script \n\n"
-               " Use either BamCore 8 Separate I-E or BamCore 8 Int Only"
-               "Download and load Bamcore Template from: \n"
-               "'https://github.com/symonkipkemei/panelization/tree/main/rvt-template'. \n"
-               "Incase of any further errors raise an issue on : \n"
-               " 'https://github.com/symonkipkemei/panelization/issues' \n")
-
-
-def auto_adjust_wall_sweep_length(__title__, wall_sweep):
-    """
-    Adjust length of wall sweep so that it cuts the panel completely
-    :param __title__: tool title
-    :param wall_sweep: wall sweep to be adjusted
-    :return: wall sweep adjusted
-    """
-
-    # get existing length of the wall parameter
-    length_param = wall_sweep.get_Parameter(BuiltInParameter.CURVE_ELEM_LENGTH)
-    print (length_param)
-    current_length = length_param.AsDouble()
-
-    # adjust length by an 1 inch to cut the panel completely
-    new_length = current_length + 0.08
-
-    with Transaction(doc, __title__) as t:
-        t.Start()
-        length_param.Set(new_length)
-        t.Commit()
+    centre_index = g.get_centre_index(__title__, part)
+    part_length = g.get_part_length(part)
+    left_edge, right_edge = g.get_edge_index_v2(part_length, centre_index)
+    # out_ranges = o.get_hosted_windows_out_range(__title__, part)
+    # updating out-ranges to include doors
+    out_ranges = []
+    reveal_indexes = g.get_reveal_indexes_v2(left_edge, right_edge, out_ranges, exterior)
+    auto_panel(__title__, host_wall_id, lap_type_id, reveal_indexes, side_of_wall)

@@ -110,87 +110,6 @@ def delete_element(__title__, *args):
         t.Commit()
 
 
-def get_edge_index(__title__, part, host_wall_id, lap_type_id, variable_distance, side_of_wall):
-    """
-    Get the edge indexes ( left and right) when a part is selected.
-    The index are relative to the position of the reveal at distance 0
-    :param __title__: tool title
-    :param part: selected part
-    :param variable_distance: distance from reveal at 0
-    :param side_of_wall: side to place reveals
-    :return: collection of left and right edges
-    """
-
-    global left_edge_index, right_edge_index
-
-    # abstract the length of the part
-    part_length = part.get_Parameter(BuiltInParameter.DPART_LENGTH_COMPUTED).AsDouble()
-
-    # split parts  by placing a reveal: old_part(retains the original part id), new_part (assigned a new part id)
-
-    # fst_wall_sweep
-    with Transaction(doc, __title__) as t:
-        t.Start()
-        fst_wall_sweep = a.auto_reveal(host_wall_id, lap_type_id, variable_distance, side_of_wall)
-        t.Commit()
-
-        # get old_part_length ( part with original id)
-    old_part_length_before_snd_reveal = part.get_Parameter(BuiltInParameter.DPART_LENGTH_COMPUTED).AsDouble()
-
-    # create snd wall sweep
-    move_distance = 0.166667  # 1/4", small distance to ensure part is cut
-    with Transaction(doc, __title__) as t:
-        t.Start()
-        snd_wall_sweep = a.auto_reveal(host_wall_id, lap_type_id, (variable_distance + move_distance), side_of_wall)
-        t.Commit()
-
-    # get old_part_length after snd reveal ( part with original id)
-    old_part_length_after_snd_reveal = part.get_Parameter(BuiltInParameter.DPART_LENGTH_COMPUTED).AsDouble()
-
-    # determine the left/right edge index in reference to reveal at 0
-    if old_part_length_after_snd_reveal == old_part_length_before_snd_reveal and \
-            old_part_length_after_snd_reveal != part_length:
-        # the old part is on the right, not affected by reveal moving (right to left)
-        left_edge_index = (part_length - (old_part_length_before_snd_reveal - variable_distance))
-        right_edge_index = left_edge_index - part_length
-
-    elif old_part_length_after_snd_reveal != old_part_length_before_snd_reveal and \
-            old_part_length_after_snd_reveal != part_length:
-        # the old part is on the left affected by reveal moving (right to left)
-
-        left_edge_index = old_part_length_before_snd_reveal - variable_distance
-        right_edge_index = left_edge_index - part_length
-
-    elif old_part_length_after_snd_reveal == part_length:
-        # The parts were not cut, thus length did not change, possibly a non-orthogonal wall
-        # or reveals are outside the Parts
-        with Transaction(doc, __title__) as t:
-            t.Start()
-            doc.Delete(fst_wall_sweep.Id)
-            doc.Delete(snd_wall_sweep.Id)
-            t.Commit()
-        raise ValueError
-
-    else:
-        # unforeseen errors, the tool is dysfunctional check for errors, catch un-panelized panels
-        with Transaction(doc, __title__) as t:
-            t.Start()
-            doc.Delete(fst_wall_sweep.Id)
-            doc.Delete(snd_wall_sweep.Id)
-            t.Commit()
-
-        raise ValueError
-
-    # delete reveals after abstracting the edge indexes
-    with Transaction(doc, __title__) as t:
-        t.Start()
-        doc.Delete(fst_wall_sweep.Id)
-        doc.Delete(snd_wall_sweep.Id)
-        t.Commit()
-
-    return left_edge_index, right_edge_index
-
-
 def get_reveal_indexes_v2(left_edge, right_edge, out_ranges, exterior=True):
     """
     Retrieve the reveal indexes, taking into consideration the window out-ranges
@@ -365,7 +284,6 @@ def get_centre_index(__title__, part):
     :param __title__: tool title
     :return: variable distance
     """
-
     # project parameters
     host_wall_id = get_host_wall_id(part)
     layer_index = get_layer_index(part)
@@ -391,7 +309,7 @@ def get_centre_index(__title__, part):
     while True:
         reveal_1 = a.auto_place_reveal_v2(__title__, host_wall_id, lap_type_id, variable_distance, side_of_wall)
         length_after_reveal = get_part_length(part)
-        #print (variable_distance)
+        # print (variable_distance)
         if c.get_bounding_box_center(reveal_1) is not None:
             break
         elif length_before_reveal != length_after_reveal:

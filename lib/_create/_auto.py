@@ -162,8 +162,7 @@ def auto_parts(__title__, part):
     centre_index = g.get_centre_index(__title__, part)
     part_length = g.get_part_length(part)
     left_edge, right_edge = g.get_edge_index_v2(part_length, centre_index)
-    # out_ranges = o.get_hosted_windows_out_range(__title__, part)
-    # updating out-ranges to include doors
-    out_ranges = []
+    out_ranges = o.get_hosted_windows_out_range(__title__, part)
+    # updating out-ranges to include doors, openings
     reveal_indexes = g.get_reveal_indexes_v2(left_edge, right_edge, out_ranges, exterior)
     auto_panel(__title__, host_wall_id, lap_type_id, reveal_indexes, side_of_wall)

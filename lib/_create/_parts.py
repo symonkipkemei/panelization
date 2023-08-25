@@ -7,7 +7,7 @@ from Autodesk.Revit.DB import *
 from Autodesk.Revit.DB import Transaction, Element, ElementId, FilteredElementCollector
 from Autodesk.Revit.DB.Structure import StructuralType
 from Autodesk.Revit.UI.Selection import ObjectType
-from Autodesk.Revit.DB.BuiltInFailures import CreationFailures as cf
+
 import clr
 
 clr.AddReference("System")
@@ -16,6 +16,7 @@ from _create import _auto as a
 from _create import _test as tt
 from _create import _coordinate as c
 from _create import _openings as o
+from _create import _errorhandler as eh
 
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> VARIABLES
 
@@ -30,30 +31,6 @@ active_level = doc.ActiveView.GenLevel
 
 
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ATOMIC FUNCTIONS
-
-
-def get_host_wall_id(part):
-    """
-    Retrieves the host wall id, when a Part is selected
-    :param part: selected part
-    :return: host_wall_id
-    """
-    linkedElementIdCollection = part.GetSourceElementIds()
-    host_wall_id = linkedElementIdCollection[0].HostElementId  # pick first linkedelement in collection
-
-    return host_wall_id
-
-
-def get_host_wall_type_id(host_wall_id):
-    """
-    Abstract the type of the wall by retrieving the wall type id
-    :param host_wall_id: id of the wall
-    :return: id of the wall type
-    """
-    host_wall = doc.GetElement(host_wall_id)
-    type_id = host_wall.GetTypeId()
-
-    return type_id
 
 
 def select_all_parts():
@@ -78,7 +55,7 @@ def select_part():
     if str(type(part)) == "<type 'Part'>":
         return part
     else:
-        print("Select a Part for it to be multi-panelized, you've selected", type(part))
+        raise e.CannotPanelizeError
 
 
 def select_parts():
@@ -97,6 +74,57 @@ def select_parts():
     return parts
 
 
+def get_host_wall_id(part):
+    """
+    Retrieves the host wall id, when a Part is selected
+    :param part: selected part
+    :return: host_wall_id
+    """
+    linkedElementIdCollection = part.GetSourceElementIds()
+    host_wall_id = linkedElementIdCollection[0].HostElementId  # pick first linkedelement in collection
+
+    return host_wall_id
+
+def get_host_wall_type_id(host_wall_id):
+    """
+    Abstract the type of the wall by retrieving the wall type id
+    :param host_wall_id: id of the wall
+    :return: id of the wall type
+    """
+    host_wall = doc.GetElement(host_wall_id)
+    type_id = host_wall.GetTypeId()
+
+    return type_id
+
+def get_wallsweep_parameters(layer_index, host_wall_type_id):
+    """Abstract parameters based on the layer index of the part"""
+
+    global lap_type_id, side_of_wall, exterior
+    left_lap_id = ElementId(352818)
+    right_lap_id = ElementId(352808)
+
+    I_E_wall_types = [ElementId(384173), ElementId(391917), ElementId(391949), ElementId(391949), ElementId(391971)]
+    I_wall_types = [ElementId(400084)]
+
+    if host_wall_type_id not in I_wall_types:
+        if layer_index == 1:  # exterior face
+            side_of_wall = WallSide.Exterior
+            lap_type_id = right_lap_id
+            exterior = True
+
+        elif layer_index == 3:  # interior face
+            side_of_wall = WallSide.Interior
+            lap_type_id = left_lap_id
+            exterior = False
+
+    elif host_wall_type_id in I_wall_types:
+        if layer_index == 2:  # interior face of partition walls, ignore layer-index 1 (the core)
+            side_of_wall = WallSide.Interior
+            lap_type_id = left_lap_id
+            exterior = False
+
+    return lap_type_id,side_of_wall,exterior
+
 def delete_element(__title__, *args):
     """
     Delete a single/many element in revit
@@ -108,7 +136,6 @@ def delete_element(__title__, *args):
         for element_id in args:
             doc.Delete(element_id)
         t.Commit()
-
 
 def get_reveal_indexes_v2(left_edge, right_edge, out_ranges, exterior=True):
     """
@@ -199,7 +226,6 @@ def get_reveal_indexes_v2(left_edge, right_edge, out_ranges, exterior=True):
 
     return reveal_indexes
 
-
 def get_single_panel_reveal_indexes(left_edge, right_edge, exterior=True):
     """Determine the position of a reveal index for a single panel
     :param exterior: if part exterior or not
@@ -219,7 +245,6 @@ def get_single_panel_reveal_indexes(left_edge, right_edge, exterior=True):
 
     return reveal_indexes
 
-
 def get_layer_index(part):
     """
     Abstract the layer index of a part if
@@ -234,48 +259,12 @@ def get_layer_index(part):
     layer_index = int(part.get_Parameter(BuiltInParameter.DPART_LAYER_INDEX).AsString())
     return layer_index
 
-
-def check_if_parts_panelized(parts):
-    """
-    Filter parts that have not been panelized only, to avoid panelizing panels further
-    :param parts: list of parts selected from an open revit document
-    :return: non-panelized parts
-    """
-    parts_to_panelize = []
-    for part in parts:
-        part_length = part.get_Parameter(BuiltInParameter.DPART_LENGTH_COMPUTED).AsDouble()
-        if part_length > 4:
-            parts_to_panelize.append(part)
-
-    return parts_to_panelize
-
-
-def check_if_host_wall_edited(parts):
-    """
-    Parts with edited host walls results to non-orthogonal parts,
-    these parts are not cut by reveals thus a need to skip them.
-    The script filters non-orthogonal parts
-    :param parts: list of parts selected from an open revit document
-    :return: orthogonal parts
-    """
-    orthogonal_parts = []
-    for part in parts:
-        host_wall_id = get_host_wall_id(part)
-        host_wall = doc.GetElement(host_wall_id)
-        sketch = host_wall.SketchId  # if sketchId is not -1, then the wall has been edited
-
-        if sketch == ElementId(-1):
-            orthogonal_parts.append(part)
-    return orthogonal_parts
-
-
 def get_part_length(part):
     """
     Abstract the length of selected part
     :return: length
     """
     return part.get_Parameter(BuiltInParameter.DPART_LENGTH_COMPUTED).AsDouble()
-
 
 def get_centre_index(__title__, part):
     """
@@ -286,17 +275,10 @@ def get_centre_index(__title__, part):
     """
     # project parameters
     host_wall_id = get_host_wall_id(part)
+    host_wall_type_id =get_host_wall_type_id(host_wall_id)
     layer_index = get_layer_index(part)
-    lap_type_id = 0
-    side_of_wall = None
+    lap_type_id, side_of_wall, exterior = get_wallsweep_parameters(layer_index, host_wall_type_id)
     x_axis_plane = c.determine_x_plane(host_wall_id)
-    if layer_index == 1:
-        lap_type_id = ElementId(352808)  # right_lap_id
-        side_of_wall = WallSide.Exterior
-
-    elif layer_index == 3:
-        lap_type_id = ElementId(352818)  # left_lap_id
-        side_of_wall = WallSide.Interior
 
     # establish the length of part
     length_before_reveal = get_part_length(part)
@@ -317,8 +299,8 @@ def get_centre_index(__title__, part):
         delete_element(__title__, reveal_1.Id)
         variable_distance += 3
         if variable_distance > 100:
-            print ("The variable distance could not be established")
-            break
+            raise eh.VariableDistanceNotFoundError
+
 
     reveal_xyz_coordinates_1 = c.get_bounding_box_center(reveal_1)
     reveal_plane_coordinate_1 = float(c.get_plane_coordinate(reveal_xyz_coordinates_1, x_axis_plane))
@@ -362,7 +344,6 @@ def get_centre_index(__title__, part):
 
     return centre_index
 
-
 def get_edge_index_v2(length, centre_index):
     """
     Determine the left or the right edge
@@ -381,3 +362,4 @@ def get_edge_index_v2(length, centre_index):
     left_edge = edges[1]  # the largest value becomes the left edge
 
     return left_edge, right_edge
+

@@ -57,7 +57,10 @@ clr.AddReference("System")
 
 from _create import _auto as a
 from _create import _parts as g
+from _create import  _errorhandler as eh
 
+
+from pyrevit import forms
 # VARIABLES
 ################################################################################################################################
 
@@ -73,11 +76,17 @@ active_level = doc.ActiveView.GenLevel
 
 def main():
 
-    parts = g.select_parts()
-    # part = g.check_if_part_panelized(part)
-    for part in parts:
-        a.auto_parts(__title__, part)
-
+    try:
+        parts = g.select_parts()
+        # part = g.check_if_part_panelized(part)
+        for part in parts:
+            a.auto_parts(__title__, part)
+    except eh.CannotPanelizeError:
+        forms.alert('Select a Part to Panelize')
+    except eh.CannotSplitPanelError:
+        forms.alert("Centre Index could not be established")
+    except eh.VariableDistanceNotFoundError:
+        forms.alert("The variable distance could not be established")
 
 if __name__ == "__main__":
     # print(get_part_length(496067))

@@ -17,7 +17,9 @@ from _create import _test as tt
 from _create import _parts as p
 from _create import _coordinate as c
 from _create import _openings as o
-
+from _create import _errorhandler as e
+from _create import _checks as cc
+from pyrevit import forms
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> VARIABLES
 
 app = __revit__.Application  # represents the Revit Autodesk Application
@@ -124,22 +126,6 @@ def test_window_centres(__title__):
         a.auto_place_reveal(__title__, hosted_wall_id, lap_type_id, window_index, side_of_wall)
 
 
-class RevealWarningSwallower(IFailuresPreprocessor):
-    def PreprocessFailures(self, failuresAccessor):
-        failList = []
-        # Inside event handler, get all warnings
-        failList = failuresAccessor.GetFailureMessages()
-
-        for failure in failList:
-            # check FailureDefinitionIds against ones that you want to dismiss
-            failID = failure.GetFailureDefinitionId()
-            # prevent Revit from showing Unenclosed room warnings
-            if failID == BuiltInFailures.SweepFailures.CannotDrawSweep:
-                failuresAccessor.DeleteWarning(failure)
-            else:
-                failuresAccessor.DeleteWarning(failure)
-
-        return FailureProcessingResult.Continue
 
 
 def test_split_parts(__title__):
@@ -220,46 +206,52 @@ def test_left_edge(__title__):
 
 def test_direction(__title__):
     """test direction by placing two reveals and abstracting their coordinates for comparison"""
-    part = p.select_part()
-    host_wall_id = p.get_host_wall_id(part)
-    layer_index = p.get_layer_index(part)
-    lap_type_id = 0
-    side_of_wall = None
-    exterior = None
-    x_axis_plane = c.determine_x_plane(host_wall_id)
-    if layer_index == 1:
-        lap_type_id = ElementId(352808)  # right_lap_id
-        side_of_wall = WallSide.Exterior
-        exterior = True
-    elif layer_index == 3:
-        lap_type_id = ElementId(352818)  # left_lap_id
-        side_of_wall = WallSide.Interior
-        exterior = False
 
-    reveal_1 = a.auto_place_reveal_v2(__title__, host_wall_id, lap_type_id, 1, side_of_wall)
-    reveal_2 = a.auto_place_reveal_v2(__title__, host_wall_id, lap_type_id, 2, side_of_wall)
-    reveal_4 = a.auto_place_reveal_v2(__title__, host_wall_id, lap_type_id, 4, side_of_wall)
+    try:
+        part = p.select_part()
+        host_wall_id = p.get_host_wall_id(part)
+        layer_index = p.get_layer_index(part)
+        lap_type_id = 0
+        side_of_wall = None
+        exterior = None
+        x_axis_plane = c.determine_x_plane(host_wall_id)
+        if layer_index == 1:
+            lap_type_id = ElementId(352808)  # right_lap_id
+            side_of_wall = WallSide.Exterior
+            exterior = True
+        elif layer_index == 3:
+            lap_type_id = ElementId(352818)  # left_lap_id
+            side_of_wall = WallSide.Interior
+            exterior = False
 
-    # reveal 1 coordinates
-    reveal_xyz_coordinates_1 = c.get_bounding_box_center(reveal_1)
-    reveal_plane_coordinate_1 = c.get_plane_coordinate(reveal_xyz_coordinates_1, x_axis_plane)
-    reveal_plane_coordinate_1 = float(reveal_plane_coordinate_1)  # to determine coordinate at 0
+        reveal_1 = a.auto_place_reveal_v2(__title__, host_wall_id, lap_type_id, 1, side_of_wall)
+        reveal_2 = a.auto_place_reveal_v2(__title__, host_wall_id, lap_type_id, 2, side_of_wall)
+        reveal_4 = a.auto_place_reveal_v2(__title__, host_wall_id, lap_type_id, 4, side_of_wall)
 
-    # reveal 2 coordinates
-    reveal_xyz_coordinates_2 = c.get_bounding_box_center(reveal_2)
-    reveal_plane_coordinate_2 = c.get_plane_coordinate(reveal_xyz_coordinates_2, x_axis_plane)
-    reveal_plane_coordinate_2 = float(reveal_plane_coordinate_2)  # to determine coordinate at 0
+        # reveal 1 coordinates
+        reveal_xyz_coordinates_1 = c.get_bounding_box_center(reveal_1)
+        reveal_plane_coordinate_1 = c.get_plane_coordinate(reveal_xyz_coordinates_1, x_axis_plane)
+        reveal_plane_coordinate_1 = float(reveal_plane_coordinate_1)  # to determine coordinate at 0
 
-    # reveal 4 coordinates
-    reveal_xyz_coordinates_4 = c.get_bounding_box_center(reveal_4)
-    reveal_plane_coordinate_4 = c.get_plane_coordinate(reveal_xyz_coordinates_4, x_axis_plane)
-    reveal_plane_coordinate_4 = float(reveal_plane_coordinate_4)  # to determine coordinate at 0
+        # reveal 2 coordinates
+        reveal_xyz_coordinates_2 = c.get_bounding_box_center(reveal_2)
+        reveal_plane_coordinate_2 = c.get_plane_coordinate(reveal_xyz_coordinates_2, x_axis_plane)
+        reveal_plane_coordinate_2 = float(reveal_plane_coordinate_2)  # to determine coordinate at 0
+
+        # reveal 4 coordinates
+        reveal_xyz_coordinates_4 = c.get_bounding_box_center(reveal_4)
+        reveal_plane_coordinate_4 = c.get_plane_coordinate(reveal_xyz_coordinates_4, x_axis_plane)
+        reveal_plane_coordinate_4 = float(reveal_plane_coordinate_4)  # to determine coordinate at 0
+
+        print ("reveal plane coordinate 1", reveal_plane_coordinate_1)
+        print ("reveal plane coordinate 2", reveal_plane_coordinate_2)
+        print ("reveal plane coordinate 4", reveal_plane_coordinate_4)
+
+    except e.CannotPanelizeError:
+        forms.alert('Select a Part to Panelize')
 
 
 
-    print ("reveal plane coordinate 1", reveal_plane_coordinate_1)
-    print ("reveal plane coordinate 2", reveal_plane_coordinate_2)
-    print ("reveal plane coordinate 4", reveal_plane_coordinate_4)
 
 
 def test_reveal_distance(__title__):
@@ -287,4 +279,9 @@ def test_reveal_distance(__title__):
 
     a.auto_place_reveal_v2(__title__, host_wall_id, lap_type_id, variable_distance,side_of_wall)
 
-
+def test_centre_index(__title__):
+    """Check if the centre index is correct"""
+    part = p.select_part()
+    centre_index = p.get_centre_index(__title__, part)
+    ans = cc.check_centre_index(__title__, part, centre_index)
+    print ans

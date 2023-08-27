@@ -37,6 +37,23 @@ class RevealWarningSwallower(IFailuresPreprocessor):
         return FailureProcessingResult.Continue
 
 
+# delete dialog box for : Wall part could not be properly adjusted for join condition.
+class JointConditionSwallower(IFailuresPreprocessor):
+    def PreprocessFailures(self, failuresAccessor):
+        # Inside event handler, get all warnings
+        failList = failuresAccessor.GetFailureMessages()
+
+        for failure in failList:
+            # check FailureDefinitionIds against ones that you want to dismiss
+            failID = failure.GetFailureDefinitionId()
+            # prevent Revit from showing Unenclosed room warnings
+            if failID == BuiltInFailures.PartMakerMethodForWallFailures.CouldNotCreateWallPartDueToWallJoin:
+                failuresAccessor.DeleteWarning(failure)
+
+
+        return FailureProcessingResult.Continue
+
+
 #catch variable distance cannot  be found
 class VariableDistanceNotFoundError(Exception):
     pass

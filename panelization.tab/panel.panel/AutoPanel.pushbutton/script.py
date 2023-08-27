@@ -4,48 +4,15 @@ from __future__ import division
 
 __title__ = "AutoPanel"
 
-__doc__ = """Version  1.3
-Date  = 09.06.2023
-___________________________________________________________
-Description:
-
-This tool will create multiple panel of 4' or less 
-by breaking down a Part into panels 
-
-Direction based on type of the Parts
-
-Exterior Parts  -> left to right
-Interior Parts  -> right to left
-Partition Parts -> right to left
-
-Laps based on type of Parts
-Exterior Parts  -> right lap
-Interior Parts  -> left lap
-Partition Parts -> left lap
-
-___________________________________________________________
-How-to:
--> Click on the button
--> Select a Part
-___________________________________________________________
-last update:
-- [01.07.2023] - 1.3 RELEASE
-
-___________________________________________________________
-To do:
--> Allow the user to set a constrain of the smallest panel size
-___________________________________________________________
-Author: Symon Kipkemei
-
+__doc__ = """
+Auto select all parts and panelize
 """
 
 __author__ = "Symon Kipkemei"
 __helpurl__ = "https://www.linkedin.com/in/symon-kipkemei/"
 
-__highlight__ = 'new'
-
 __min_revit_ver__ = 2020
-__max_revit_ver__ = 2023
+__max_revit_ver__ = 2025
 
 # IMPORTS
 ################################################################################################################################
@@ -56,9 +23,8 @@ import clr
 clr.AddReference("System")
 from _create import _auto as a
 from _create import _parts as g
-
-import time
-import  random
+from _create import _checks as cc
+from _create import  _errorhandler as eh
 # VARIABLES
 ################################################################################################################################
 
@@ -74,35 +40,39 @@ active_level = doc.ActiveView.GenLevel
 
 def main():
     selected_parts = g.select_all_parts()
-    non_panelized_parts = g.check_if_parts_panelized(selected_parts)
-    parts = g.check_if_host_wall_edited(non_panelized_parts)
+    non_panelized_parts = cc.check_if_parts_panelized(selected_parts)
+    parts = cc.check_if_host_wall_edited(non_panelized_parts)
 
-    # start by BamCore 8" Separate I-E - exterior parts
-    for part in parts:
-        layer_index = g.get_layer_index(part)
-        if layer_index == 1:  # exterior parts
-            try:
-                a.auto_parts(__title__, part)
-            except ValueError:
-                pass
+    exterior_parts = []
+    interior_parts = []
 
-    # followed by BamCore 8" Separate I-E - interior parts
+    # sorted parts, starting with exterior followed by interior
     for part in parts:
+        host_wall_id = g.get_host_wall_id(part)
+        host_wall_type_id = g.get_host_wall_type_id(host_wall_id)
         layer_index = g.get_layer_index(part)
-        if layer_index == 3:  # interior parts
-            try:
-                a.auto_parts(__title__, part)
-            except ValueError:
-                pass
+        lap_type_id, side_of_wall, exterior = g.get_wallsweep_parameters(layer_index, host_wall_type_id)
 
-    # followed by BamCore 8" Int Only - interior parts
-    for part in parts:
-        layer_index = g.get_layer_index(part)
-        if layer_index == 2:  # interior parts
-            try:
-                a.auto_parts(__title__, part)
-            except ValueError:
-                pass
+        if exterior:
+            exterior_parts.append(part)
+        else:
+            interior_parts.append(part)
+
+    all_parts = exterior_parts + interior_parts
+    print (parts)
+
+    for part in all_parts:
+        try:
+            a.auto_parts(__title__, part)
+        except eh.CannotPanelizeError:
+            pass
+        except eh.CannotSplitPanelError:
+            pass
+        except eh.VariableDistanceNotFoundError:
+            pass
+        except Exception:
+            pass
+
 
 if __name__ == "__main__":
     # print(get_part_length(496067))

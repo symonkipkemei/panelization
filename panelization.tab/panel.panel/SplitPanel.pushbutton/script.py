@@ -1,49 +1,27 @@
-
-
 # METADATA
 ################################################################################################################################
 
 
 __title__ = "SplitPanel"
 
-__doc__ = """ Version  1.1
-Date  = 20.08.2023
-___________________________________________________________
-Description:
-
-This tool will auto split panels into two equal parts
-
-___________________________________________________________
-How-to:
-
--> Click on the button
--> Select a Part
-___________________________________________________________
-last update:
-- [20.08.2023] - 1.1 RELEASE
-___________________________________________________________
-Author: Symon Kipkemei
-
+__doc__ = """ 
+Split selected Part into two equal Parts
 """
-
 __author__ = "Symon Kipkemei"
 __helpurl__ = "https://www.linkedin.com/in/symon-kipkemei/"
-__highlight__ = 'new'
 __min_revit_ver__ = 2020
-__max_revit_ver__ = 2024
+__max_revit_ver__ = 2025
 
 # IMPORTS
 
-from Autodesk.Revit.DB import *
-from Autodesk.Revit.DB import Transaction, Element, ElementId, FilteredElementCollector
-from Autodesk.Revit.DB.Structure import StructuralType
-from Autodesk.Revit.UI.Selection import ObjectType
-
 from _create import _auto as a
 from _create import _parts as g
-
+from _create import _errorhandler as eh
 import clr
+
 clr.AddReference("System")
+
+from pyrevit import forms
 
 # VARIABLES
 
@@ -54,27 +32,25 @@ uidoc = __revit__.ActiveUIDocument  # obj that represent the current active proj
 active_view = doc.ActiveView
 active_level = doc.ActiveView.GenLevel
 
+
 # FUNCTIONS
 
 def main():
-    part = g.select_part()
-    host_wall_id = g.get_host_wall_id(part)
-    layer_index = g.get_layer_index(part)
-    left_lap_id = ElementId(352818)
-    right_lap_id = ElementId(352808)
+    """Auto split tool"""
+    try:
+        part = g.select_part()
+        host_wall_id = g.get_host_wall_id(part)
+        host_wall_type_id = g.get_host_wall_type_id(host_wall_id)
+        layer_index = g.get_layer_index(part)
+        lap_type_id, side_of_wall, exterior = g.get_wallsweep_parameters(layer_index, host_wall_type_id)
 
-    variable_distance = 4
-    distance = g.get_centre_index(__title__, part)
+        reveal_plane_coordinate_0 = g.get_reveal_coordinate_at_0(__title__, part)
+        distance = g.get_part_centre_index(part, reveal_plane_coordinate_0)
 
-    if layer_index == 1:  # exterior face
-        side_of_wall = WallSide.Exterior
-        lap_type_id = right_lap_id
-        a.auto_place_reveal(__title__, host_wall_id,lap_type_id, distance, side_of_wall)
-
-    elif layer_index == 3:  # interior face
-        side_of_wall = WallSide.Interior
-        lap_type_id = left_lap_id
         a.auto_place_reveal(__title__, host_wall_id, lap_type_id, distance, side_of_wall)
+
+    except eh.VariableDistanceNotFoundError:
+        forms.alert("The variable distance could not be established")
 
 
 if __name__ == "__main__":

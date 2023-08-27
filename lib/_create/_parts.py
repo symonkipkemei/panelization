@@ -53,7 +53,6 @@ def select_part():
     part = uidoc.Document.GetElement(reference)
 
     if str(type(part)) == "<type 'Part'>":
-        print (str(type(part)))
         return part
     else:
         raise eh.CannotPanelizeError
@@ -102,9 +101,14 @@ def get_host_wall_type_id(host_wall_id):
 def get_wallsweep_parameters(layer_index, host_wall_type_id):
     """Abstract parameters based on the layer index of the part"""
 
-    global lap_type_id, side_of_wall, exterior
     left_lap_id = ElementId(352818)
     right_lap_id = ElementId(352808)
+
+    # default setting for exterior
+    side_of_wall = WallSide.Exterior
+    lap_type_id = right_lap_id
+    exterior = True
+
 
     I_E_wall_types = [ElementId(384173), ElementId(391917), ElementId(391949), ElementId(391949), ElementId(391971)]
     I_wall_types = [ElementId(400084)]
@@ -272,7 +276,8 @@ def get_part_length(part):
     Abstract the length of selected part
     :return: length
     """
-    return part.get_Parameter(BuiltInParameter.DPART_LENGTH_COMPUTED).AsDouble()
+    part_length =part.get_Parameter(BuiltInParameter.DPART_LENGTH_COMPUTED).AsDouble()
+    return part_length
 
 
 def get_reveal_coordinate_at_0(__title__, part):

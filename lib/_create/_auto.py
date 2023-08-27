@@ -116,6 +116,11 @@ def auto_panel(__title__, host_wall_id, lap_type_id, reveal_indexes, side_of_wal
     try:
         with Transaction(doc, __title__) as t:
             t.Start()
+            options = t.GetFailureHandlingOptions()
+            failureProcessor = eh.JointConditionSwallower()
+            options.SetFailuresPreprocessor(failureProcessor)
+            t.SetFailureHandlingOptions(options)
+
             for reveal_index in reveal_indexes:
                 wall_sweep = auto_reveal(host_wall_id, lap_type_id, reveal_index, side_of_wall)
             t.Commit()
@@ -124,7 +129,7 @@ def auto_panel(__title__, host_wall_id, lap_type_id, reveal_indexes, side_of_wal
         print ('The following error has occurred: {}'.format(e))
 
 
-def auto_parts(__title__, part):
+def auto_parts(__title__, part, multiple = True):
     """
     Identifies :
     1. the Parts ( exterior, interior or partition ) intuitively
@@ -159,5 +164,11 @@ def auto_parts(__title__, part):
 
     out_ranges = o.get_out_ranges(part, hosted_doors, hosted_windows, reveal_plane_coordinate_0, displacement)
 
-    reveal_indexes = g.get_reveal_indexes_v2(left_edge, right_edge, out_ranges, exterior)
+    if multiple:
+        reveal_indexes = g.get_reveal_indexes_v2(left_edge, right_edge, out_ranges, exterior)
+    else:
+        reveal_indexes = g.get_single_panel_reveal_indexes(left_edge, right_edge, exterior)
+
     auto_panel(__title__, host_wall_id, lap_type_id, reveal_indexes, side_of_wall)
+
+

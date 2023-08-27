@@ -18,6 +18,7 @@ from _create import _openings as o
 from _create import _coordinate as c
 from _create import _errorhandler as eh
 from _create import _checks as cc
+
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> VARIABLES
 
 app = __revit__.Application  # represents the Revit Autodesk Application
@@ -137,18 +138,26 @@ def auto_parts(__title__, part):
     host_wall_id = g.get_host_wall_id(part)
     host_wall_type_id = g.get_host_wall_type_id(host_wall_id)
     layer_index = g.get_layer_index(part)
-    lap_type_id,side_of_wall,exterior = g.get_wallsweep_parameters(layer_index, host_wall_type_id)
-
+    lap_type_id, side_of_wall, exterior = g.get_wallsweep_parameters(layer_index, host_wall_type_id)
 
     # Test if the panel is divisible into two equal parts
-    centre_index = g.get_centre_index(__title__, part)
+    reveal_plane_coordinate_0 = g.get_reveal_coordinate_at_0(__title__, part)
+
+    centre_index = g.get_part_centre_index(part, reveal_plane_coordinate_0)
     test_centre_index = cc.check_centre_index(__title__, part, centre_index)
     if not test_centre_index:
         raise eh.CannotSplitPanelError
 
+    # create left and right edge
+
     part_length = g.get_part_length(part)
     left_edge, right_edge = g.get_edge_index_v2(part_length, centre_index)
-    out_ranges = o.get_hosted_windows_out_range(__title__, part)
-    # updating out-ranges to include doors, openings
+
+    displacement = 1
+    hosted_windows = o.get_hosted_fenestrations(host_wall_id, BuiltInCategory.OST_Windows)
+    hosted_doors = o.get_hosted_fenestrations(host_wall_id, BuiltInCategory.OST_Doors)
+
+    out_ranges = o.get_out_ranges(part, hosted_doors, hosted_windows, reveal_plane_coordinate_0, displacement)
+
     reveal_indexes = g.get_reveal_indexes_v2(left_edge, right_edge, out_ranges, exterior)
     auto_panel(__title__, host_wall_id, lap_type_id, reveal_indexes, side_of_wall)

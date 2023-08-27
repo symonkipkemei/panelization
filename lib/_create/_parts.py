@@ -53,9 +53,10 @@ def select_part():
     part = uidoc.Document.GetElement(reference)
 
     if str(type(part)) == "<type 'Part'>":
+        print (str(type(part)))
         return part
     else:
-        raise e.CannotPanelizeError
+        raise eh.CannotPanelizeError
 
 
 def select_parts():
@@ -85,6 +86,7 @@ def get_host_wall_id(part):
 
     return host_wall_id
 
+
 def get_host_wall_type_id(host_wall_id):
     """
     Abstract the type of the wall by retrieving the wall type id
@@ -95,6 +97,7 @@ def get_host_wall_type_id(host_wall_id):
     type_id = host_wall.GetTypeId()
 
     return type_id
+
 
 def get_wallsweep_parameters(layer_index, host_wall_type_id):
     """Abstract parameters based on the layer index of the part"""
@@ -123,7 +126,8 @@ def get_wallsweep_parameters(layer_index, host_wall_type_id):
             lap_type_id = left_lap_id
             exterior = False
 
-    return lap_type_id,side_of_wall,exterior
+    return lap_type_id, side_of_wall, exterior
+
 
 def delete_element(__title__, *args):
     """
@@ -136,6 +140,7 @@ def delete_element(__title__, *args):
         for element_id in args:
             doc.Delete(element_id)
         t.Commit()
+
 
 def get_reveal_indexes_v2(left_edge, right_edge, out_ranges, exterior=True):
     """
@@ -226,6 +231,7 @@ def get_reveal_indexes_v2(left_edge, right_edge, out_ranges, exterior=True):
 
     return reveal_indexes
 
+
 def get_single_panel_reveal_indexes(left_edge, right_edge, exterior=True):
     """Determine the position of a reveal index for a single panel
     :param exterior: if part exterior or not
@@ -245,6 +251,7 @@ def get_single_panel_reveal_indexes(left_edge, right_edge, exterior=True):
 
     return reveal_indexes
 
+
 def get_layer_index(part):
     """
     Abstract the layer index of a part if
@@ -259,6 +266,7 @@ def get_layer_index(part):
     layer_index = int(part.get_Parameter(BuiltInParameter.DPART_LAYER_INDEX).AsString())
     return layer_index
 
+
 def get_part_length(part):
     """
     Abstract the length of selected part
@@ -266,16 +274,16 @@ def get_part_length(part):
     """
     return part.get_Parameter(BuiltInParameter.DPART_LENGTH_COMPUTED).AsDouble()
 
-def get_centre_index(__title__, part):
+
+def get_reveal_coordinate_at_0(__title__, part):
     """
-    Determine the variable distance to be used
+    Get the coordinates of the reveal at distance 0
+    :param __title__: Tool title
     :param part: Part to be panelized
-    :param __title__: tool title
-    :return: variable distance
+
     """
-    # project parameters
     host_wall_id = get_host_wall_id(part)
-    host_wall_type_id =get_host_wall_type_id(host_wall_id)
+    host_wall_type_id = get_host_wall_type_id(host_wall_id)
     layer_index = get_layer_index(part)
     lap_type_id, side_of_wall, exterior = get_wallsweep_parameters(layer_index, host_wall_type_id)
     x_axis_plane = c.determine_x_plane(host_wall_id)
@@ -301,7 +309,6 @@ def get_centre_index(__title__, part):
         if variable_distance > 100:
             raise eh.VariableDistanceNotFoundError
 
-
     reveal_xyz_coordinates_1 = c.get_bounding_box_center(reveal_1)
     reveal_plane_coordinate_1 = float(c.get_plane_coordinate(reveal_xyz_coordinates_1, x_axis_plane))
 
@@ -323,6 +330,21 @@ def get_centre_index(__title__, part):
     # delete the reveal after abstracting the coordinate at o
     delete_element(__title__, reveal_1.Id, reveal_2.Id)
 
+    return reveal_plane_coordinate_0
+
+
+def get_part_centre_index(part, reveal_plane_coordinate_0):
+    """
+    Determine the centre index of the panel
+    :param part: Part to be panelized
+    :param reveal_plane_coordinate_0: coordinates of reveal at 0
+    :
+    :return: part centre index
+    """
+    # project parameters
+    host_wall_id = get_host_wall_id(part)
+    x_axis_plane = c.determine_x_plane(host_wall_id)
+
     # determine the coordinates of the centre of the part
     part_centre_xyz_coordinates = c.get_bounding_box_center(part)
     part_centre_coordinate = float(c.get_plane_coordinate(part_centre_xyz_coordinates, x_axis_plane))
@@ -333,16 +355,8 @@ def get_centre_index(__title__, part):
     else:
         centre_index = (part_centre_coordinate - reveal_plane_coordinate_0)
 
-    # Test parameters
-    # print ("Variable distance", variable_distance)
-    # print ("reveal plane coordinate", reveal_xyz_coordinates)
-    # print ("part_centre_xyz_coordinates", part_centre_xyz_coordinates)
-    # print("reveal coordinate", reveal_plane_coordinate_0)
-    # print ("centre coordinate", part_centre_coordinate)
-    # print ("reveal index", 0)
-    # print ("parts indexes", dif)
-
     return centre_index
+
 
 def get_edge_index_v2(length, centre_index):
     """
@@ -362,4 +376,3 @@ def get_edge_index_v2(length, centre_index):
     left_edge = edges[1]  # the largest value becomes the left edge
 
     return left_edge, right_edge
-

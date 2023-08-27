@@ -7,7 +7,7 @@ from Autodesk.Revit.DB import *
 from Autodesk.Revit.DB import Transaction, Element, ElementId, FilteredElementCollector
 from Autodesk.Revit.DB.Structure import StructuralType
 from Autodesk.Revit.UI.Selection import ObjectType
-from Autodesk.Revit.DB.BuiltInFailures import CreationFailures as cf
+
 import clr
 
 clr.AddReference("System")
@@ -282,6 +282,22 @@ def test_reveal_distance(__title__):
 def test_centre_index(__title__):
     """Check if the centre index is correct"""
     part = p.select_part()
-    centre_index = p.get_centre_index(__title__, part)
+    centre_index = p.get_part_centre_index(__title__, part)
     ans = cc.check_centre_index(__title__, part, centre_index)
     print ans
+
+
+def test_window_index_centre(__title__):
+    part = p.select_part()
+    host_wall_id = p.get_host_wall_id(part)
+    hosted_windows = o.get_hosted_fenestrations(host_wall_id, BuiltInCategory.OST_Windows)
+    reveal_coordinate_0 = p.get_reveal_coordinate_at_0(__title__, part)
+    layer_index = p.get_layer_index(part)
+    host_wall_type_id = p.get_host_wall_type_id(host_wall_id)
+
+    lap_type_id, side_of_wall, exterior = p.get_wallsweep_parameters(layer_index, host_wall_type_id)
+
+    for window in hosted_windows:
+        window_index = o.get_fenestration_centre_index(part, window, reveal_coordinate_0)
+        a.auto_place_reveal(__title__,host_wall_id,lap_type_id,window_index,side_of_wall)
+

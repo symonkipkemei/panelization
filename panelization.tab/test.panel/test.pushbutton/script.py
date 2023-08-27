@@ -74,4 +74,5 @@ if __name__ == "__main__":
     #t.test_left_edge(__title__)
     #t.test_direction(__title__)
     #t.test_reveal_distance(__title__)
-    t.test_centre_index(__title__)
+    #t.test_centre_index(__title__)
+    t.test_window_index_centre(__title__)

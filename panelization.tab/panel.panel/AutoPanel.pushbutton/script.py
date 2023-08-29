@@ -43,33 +43,13 @@ def main():
     non_panelized_parts = cc.check_if_parts_panelized(selected_parts)
     parts = cc.check_if_host_wall_edited(non_panelized_parts)
 
-    exterior_parts = []
-    interior_parts = []
-
-    # sorted parts, starting with exterior followed by interior
-    for part in parts:
-        host_wall_id = g.get_host_wall_id(part)
-        host_wall_type_id = g.get_host_wall_type_id(host_wall_id)
-        layer_index = g.get_layer_index(part)
-        lap_type_id, side_of_wall, exterior = g.get_wallsweep_parameters(layer_index, host_wall_type_id)
-
-        if exterior:
-            exterior_parts.append(part)
-        else:
-            interior_parts.append(part)
+    exterior_parts, interior_parts = g.filter_exterior_interior_parts(parts)
 
     all_parts = exterior_parts + interior_parts
-    print (parts)
 
     for part in all_parts:
         try:
             a.auto_parts(__title__, part)
-        except eh.CannotPanelizeError:
-            pass
-        except eh.CannotSplitPanelError:
-            pass
-        except eh.VariableDistanceNotFoundError:
-            pass
         except Exception:
             pass
 

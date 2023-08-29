@@ -116,10 +116,6 @@ def auto_panel(__title__, host_wall_id, lap_type_id, reveal_indexes, side_of_wal
     try:
         with Transaction(doc, __title__) as t:
             t.Start()
-            options = t.GetFailureHandlingOptions()
-            failureProcessor = eh.JointConditionSwallower()
-            options.SetFailuresPreprocessor(failureProcessor)
-            t.SetFailureHandlingOptions(options)
 
             for reveal_index in reveal_indexes:
                 wall_sweep = auto_reveal(host_wall_id, lap_type_id, reveal_index, side_of_wall)
@@ -149,16 +145,16 @@ def auto_parts(__title__, part, multiple = True):
     reveal_plane_coordinate_0 = g.get_reveal_coordinate_at_0(__title__, part)
 
     centre_index = g.get_part_centre_index(part, reveal_plane_coordinate_0)
-    test_centre_index = cc.check_centre_index(__title__, part, centre_index)
+    """    test_centre_index = cc.check_centre_index(__title__, part, centre_index)
     if not test_centre_index:
-        raise eh.CannotSplitPanelError
+        raise eh.CannotSplitPanelError"""
 
     # create left and right edge
 
     part_length = g.get_part_length(part)
     left_edge, right_edge = g.get_edge_index_v2(part_length, centre_index)
 
-    displacement = 1
+    displacement = 0.5
     hosted_windows = o.get_hosted_fenestrations(host_wall_id, BuiltInCategory.OST_Windows)
     hosted_doors = o.get_hosted_fenestrations(host_wall_id, BuiltInCategory.OST_Doors)
 

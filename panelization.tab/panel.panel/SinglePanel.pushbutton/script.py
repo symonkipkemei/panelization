@@ -43,13 +43,15 @@ active_level = doc.ActiveView.GenLevel
 def main():
     try:
         part = g.select_part()
-        a.auto_parts(__title__, part, multiple=False)
+        a.auto_parts(__title__, part, multiple=True)
     except eh.CannotPanelizeError:
         forms.alert('Select a Part to Panelize')
     except eh.CannotSplitPanelError:
         forms.alert("Centre Index could not be established")
     except eh.VariableDistanceNotFoundError:
         forms.alert("The variable distance could not be established")
+    except Exception:
+        pass
 
 if __name__ == "__main__":
     main()

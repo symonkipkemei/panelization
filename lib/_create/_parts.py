@@ -109,7 +109,6 @@ def get_wallsweep_parameters(layer_index, host_wall_type_id):
     lap_type_id = right_lap_id
     exterior = True
 
-
     I_E_wall_types = [ElementId(384173), ElementId(391917), ElementId(391949), ElementId(391949), ElementId(391971)]
     I_wall_types = [ElementId(400084)]
 
@@ -276,7 +275,7 @@ def get_part_length(part):
     Abstract the length of selected part
     :return: length
     """
-    part_length =part.get_Parameter(BuiltInParameter.DPART_LENGTH_COMPUTED).AsDouble()
+    part_length = part.get_Parameter(BuiltInParameter.DPART_LENGTH_COMPUTED).AsDouble()
     return part_length
 
 
@@ -300,7 +299,7 @@ def get_reveal_coordinate_at_0(__title__, part):
     # a reveal that does not cut through the part will not give us it's coordinates
 
     # reveal 1 plane coordinate
-    variable_distance = -3
+    variable_distance = 3
     while True:
         reveal_1 = a.auto_place_reveal_v2(__title__, host_wall_id, lap_type_id, variable_distance, side_of_wall)
         length_after_reveal = get_part_length(part)
@@ -381,3 +380,22 @@ def get_edge_index_v2(length, centre_index):
     left_edge = edges[1]  # the largest value becomes the left edge
 
     return left_edge, right_edge
+
+
+def filter_exterior_interior_parts(parts):
+    exterior_parts = []
+    interior_parts = []
+
+    # sorted parts, starting with exterior followed by interior
+    for part in parts:
+        host_wall_id = get_host_wall_id(part)
+        host_wall_type_id = get_host_wall_type_id(host_wall_id)
+        layer_index = get_layer_index(part)
+        lap_type_id, side_of_wall, exterior = get_wallsweep_parameters(layer_index, host_wall_type_id)
+
+        if exterior:
+            exterior_parts.append(part)
+        else:
+            interior_parts.append(part)
+
+    return exterior_parts, interior_parts

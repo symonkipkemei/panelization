@@ -122,6 +122,8 @@ def get_wallsweep_parameters(layer_index, host_wall_type_id):
             side_of_wall = WallSide.Interior
             lap_type_id = left_lap_id
             exterior = False
+        else:
+            exterior = None
 
     elif host_wall_type_id in I_wall_types:
         if layer_index == 2:  # interior face of partition walls, ignore layer-index 1 (the core)
@@ -385,6 +387,7 @@ def get_edge_index_v2(length, centre_index):
 def filter_exterior_interior_parts(parts):
     exterior_parts = []
     interior_parts = []
+    core_parts = []
 
     # sorted parts, starting with exterior followed by interior
     for part in parts:
@@ -393,9 +396,12 @@ def filter_exterior_interior_parts(parts):
         layer_index = get_layer_index(part)
         lap_type_id, side_of_wall, exterior = get_wallsweep_parameters(layer_index, host_wall_type_id)
 
-        if exterior:
+        if exterior == True:
             exterior_parts.append(part)
-        else:
+        elif exterior == False:
             interior_parts.append(part)
+        elif exterior == None:
+            core_parts.append(part)
+
 
     return exterior_parts, interior_parts

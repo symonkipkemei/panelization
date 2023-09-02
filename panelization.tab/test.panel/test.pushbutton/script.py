@@ -51,6 +51,9 @@ from _create import _coordinate as c
 from _create import _openings as o
 from _create import _test as t
 
+
+from _create import _testpyrevit as tp
+
 # VARIABLES
 ########################################################################################################################
 
@@ -75,4 +78,11 @@ if __name__ == "__main__":
     #t.test_direction(__title__)
     #t.test_reveal_distance(__title__)
     #t.test_centre_index(__title__)
-    t.test_window_index_centre(__title__)
+    #t.test_window_index_centre(__title__)
+    #tp.command_option()
+    #tp.combined_option()
+    #tp.get_value()
+    #tp.sample_form()
+    #tp.display_form()
+    #tp.display_table()
+    print(type(tp.single_value()))

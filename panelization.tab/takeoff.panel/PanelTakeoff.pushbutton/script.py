@@ -38,6 +38,8 @@ from Autodesk.Revit.UI.Selection import ObjectType
 from _create import _auto as a
 from _create import _parts as g
 
+from _create import _forms as f
+from pyrevit import forms
 import clr
 
 clr.AddReference("System")
@@ -55,88 +57,118 @@ active_level = doc.ActiveView.GenLevel
 # FUNCTIONS
 
 
-def get_parts_data():
+def get_parts_data(part_type="both"):
     parts = g.select_all_parts()
+    exterior_parts, interior_parts = g.filter_exterior_interior_parts(parts)
+    if part_type == "exterior":
+        filtered_parts = exterior_parts
+    elif part_type == "interior":
+        filtered_parts = interior_parts
+    elif part_type == "both":
+        filtered_parts = interior_parts + exterior_parts
+    else:
+        filtered_parts = None
+
     parts_data = {}
 
-    for part in parts:
+    for part in filtered_parts:
         # abstract length, height and index from model
         parts_id = part.Id
-        length = part.get_Parameter(BuiltInParameter.DPART_LENGTH_COMPUTED).AsValueString()
-        height = part.get_Parameter(BuiltInParameter.DPART_HEIGHT_COMPUTED).AsValueString()
-        index = g.get_layer_index(part)
-        # store in a dictionary
 
-        parts_data[parts_id] = [length, height, index]
+        height = part.get_Parameter(BuiltInParameter.DPART_HEIGHT_COMPUTED).AsValueString()
+        length = part.get_Parameter(BuiltInParameter.DPART_LENGTH_COMPUTED).AsValueString()
+        thickness = part.get_Parameter(BuiltInParameter.DPART_LAYER_WIDTH).AsDouble()
+        volume = part.get_Parameter(BuiltInParameter.DPART_VOLUME_COMPUTED).AsDouble()
+        base_level = part.get_Parameter(BuiltInParameter.DPART_BASE_LEVEL).AsDouble()
+        area = part.get_Parameter(BuiltInParameter.DPART_AREA_COMPUTED).AsDouble()
+
+        part_type = height + " x " + length
+
+        parts_data[parts_id] = [part_type, height, length, thickness, volume, base_level, area]
 
     return parts_data
 
 
-def get_parts_group(parts_data):
-    # filter only to external and internal parts:
-    external_part_group = []
-    internal_part_group = []
-    total_part_group = []
-
-    for part in parts_data.values():
-        length = part[0]
-        height = part[1]
-        index = part[2]
-
-        part_type = length + " x " + height
-
-        if index == 1:
-            if part_type not in external_part_group:
-                external_part_group.append(part_type)
-        elif index == 3:
-            if part_type not in internal_part_group:
-                internal_part_group.append(part_type)
-        if index == 3 or index == 1:
-            if part_type not in total_part_group:
-                total_part_group.append(part_type)
-
-    return external_part_group, internal_part_group, total_part_group
-
-
-def count_part_type(part_group_name, part_group, parts_data, group_index):
+def get_parts_type_data(parts_data):
     data = {}
-    for default_part_type in part_group:
+
+    for part_data in parts_data.values():  # the default type
+        default_part_type = part_data[0]
         count = 0
-
         for part in parts_data.values():
-            length = part[0]
-            height = part[1]
-            index = part[2]
-            part_type = length + " x " + height
+            part_type = part[0]
 
-            if part_type == default_part_type and index == group_index:
-                count += 1
-            elif part_type == default_part_type and group_index == 0:
+            if default_part_type == part_type:
                 count += 1
 
         data[default_part_type] = count
 
-    print ("\n{group_name}".format(group_name=part_group_name))
-    print ("_______________________________")
-    for i, (key, value) in enumerate(data.items(),1):
-        key = key.replace("-", "")
-        key = key.replace("\\", "")
-        print ("{i}. Panel type: {key} ______ count:{value}".format(i=i,key=key, value=value))
-    print ("_______________________________\n")
-
     return data
 
 
+def get_summary_data(parts_data, parts_type_data, cost_per_sf ):
+    final_data = []
+    sum_panels = 0
+    sum_area = 0
+    sum_cost = 0
+
+    for part_type, count in parts_type_data.items():
+        for part in parts_data.values():
+            if part_type == part[0]:
+                total_area = count * part[6]
+                total_cost = total_area * cost_per_sf
+                combine_data = part[1:] + [count] + [total_area] + [cost_per_sf] + [total_cost]
+                final_data.append(combine_data)
+
+                sum_panels += count
+                sum_area += total_area
+                sum_cost += total_cost
+
+                break
+
+    sum_total = ["-", "-", "-", "-", "-", "-", sum_panels, sum_area, "-", sum_cost]
+    final_data.append(sum_total)
+
+    return final_data
+
+
 def main():
-    # get parts data
-    parts_data = get_parts_data()
+    cost_per_sf = float(f.single_digit_value())
 
-    # get parts type
-    external_part_group, internal_part_group, total_part_group = get_parts_group(parts_data)
+    while True:
+        # user sets cost per m2 and selects which pane to establish cost
+        ops = ['External Parts', 'Internal Parts', 'External and Internal Parts']
+        cfgs = {'External and Internal Parts': {'background': '#783F04'}}
+        user_choice = forms.CommandSwitchWindow.show(
+            ops,
+            message='Select Option for Takeoff',
+            config=cfgs,
+            recognize_access_key=False)
 
-    external_count_types = count_part_type("External Panels", external_part_group, parts_data, 1)
-    internal_count_types = count_part_type("Internal Panels", internal_part_group, parts_data, 3)
-    total_count_types = count_part_type("Total Panels", total_part_group, parts_data, 0)
+        # get parts data
+        if user_choice == "External Parts":
+            parts_data = get_parts_data(part_type="exterior")
+            break
+        elif user_choice == "Internal Parts":
+            parts_data = get_parts_data(part_type="interior")
+            break
+        elif user_choice == "External and Internal Parts":
+            parts_data = get_parts_data(part_type="both")
+            break
+
+    parts_type_data = get_parts_type_data(parts_data)
+
+    final_data = get_summary_data(parts_data, parts_type_data,cost_per_sf)
+
+    # display panels data
+    header = ["HEIGHT(F)", "LENGTH(F)", "THICKNESS(F)", "VOLUME (CF) ", "BASE LEVEL", "AREA (SF)", "COUNT",
+              "TOTAL AREA(SF)",
+              "COST PER SF (USD)", " COST(USD)"]
+    f.display_form(final_data, header, "Parts Material Takeoff" + "-" + user_choice)
+
+    # display summary data
+    # header = ["TOTAL PANELS", "TOTAL AREA", "TOTAL COST"]
+    # f.display_form(sum_total, header, "Parts Material Takeoff")
 
 
 if __name__ == "__main__":

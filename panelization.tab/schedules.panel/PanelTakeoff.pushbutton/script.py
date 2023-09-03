@@ -4,27 +4,14 @@
 
 __title__ = "PanelTakeoff"
 
-__doc__ = """ Version  1.1
-Date  = 24.06.2023
-___________________________________________________________
-Description:
-
-This tool will auto schedule all panels in the project
-
-___________________________________________________________
--> Click on the button
-
-___________________________________________________________
-last update:
-- [24.07.2023] - 1.1 RELEASE
-
-Author: Symon Kipkemei
-
+__doc__ = """ 
+Auto Generate panel Material takeoff
+by inputting the cost estimate per panel and
+selecting the parts type
 """
 
 __author__ = "Symon Kipkemei"
 __helpurl__ = "https://www.linkedin.com/in/symon-kipkemei/"
-__highlight__ = 'new'
 __min_revit_ver__ = 2020
 __max_revit_ver__ = 2023
 
@@ -60,11 +47,11 @@ active_level = doc.ActiveView.GenLevel
 def get_parts_data(part_type="both"):
     parts = g.select_all_parts()
     exterior_parts, interior_parts = g.filter_exterior_interior_parts(parts)
-    if part_type == "exterior":
+    if part_type == "External Parts":
         filtered_parts = exterior_parts
-    elif part_type == "interior":
+    elif part_type == "Internal Parts":
         filtered_parts = interior_parts
-    elif part_type == "both":
+    elif part_type == "External and Internal Parts":
         filtered_parts = interior_parts + exterior_parts
     else:
         filtered_parts = None
@@ -134,28 +121,8 @@ def get_summary_data(parts_data, parts_type_data, cost_per_sf ):
 
 def main():
     cost_per_sf = float(f.single_digit_value())
-
-    while True:
-        # user sets cost per m2 and selects which pane to establish cost
-        ops = ['External Parts', 'Internal Parts', 'External and Internal Parts']
-        cfgs = {'External and Internal Parts': {'background': '#783F04'}}
-        user_choice = forms.CommandSwitchWindow.show(
-            ops,
-            message='Select Option for Takeoff',
-            config=cfgs,
-            recognize_access_key=False)
-
-        # get parts data
-        if user_choice == "External Parts":
-            parts_data = get_parts_data(part_type="exterior")
-            break
-        elif user_choice == "Internal Parts":
-            parts_data = get_parts_data(part_type="interior")
-            break
-        elif user_choice == "External and Internal Parts":
-            parts_data = get_parts_data(part_type="both")
-            break
-
+    parts_type = f.select_part_type()
+    parts_data = get_parts_data(parts_type)
     parts_type_data = get_parts_type_data(parts_data)
 
     final_data = get_summary_data(parts_data, parts_type_data,cost_per_sf)
@@ -164,11 +131,8 @@ def main():
     header = ["HEIGHT(F)", "LENGTH(F)", "THICKNESS(F)", "VOLUME (CF) ", "BASE LEVEL", "AREA (SF)", "COUNT",
               "TOTAL AREA(SF)",
               "COST PER SF (USD)", " COST(USD)"]
-    f.display_form(final_data, header, "Parts Material Takeoff" + "-" + user_choice)
 
-    # display summary data
-    # header = ["TOTAL PANELS", "TOTAL AREA", "TOTAL COST"]
-    # f.display_form(sum_total, header, "Parts Material Takeoff")
+    f.display_form(final_data, header, "Parts Material Takeoff" + "-" + parts_type)
 
 
 if __name__ == "__main__":

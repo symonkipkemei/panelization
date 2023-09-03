@@ -2,10 +2,10 @@
 ################################################################################################################################
 
 
-__title__ = "PanelTakeoff"
+__title__ = "Panelized"
 
 __doc__ = """ 
-Auto Generate panel Material takeoff
+Auto Generate panel Material takeoff of panelized parts
 by inputting the cost estimate per panel and
 selecting the parts type
 """

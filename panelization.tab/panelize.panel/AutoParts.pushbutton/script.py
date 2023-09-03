@@ -2,7 +2,7 @@ from __future__ import division
 
 # METADATA
 
-__title__ = "AutoPanel"
+__title__ = "AutoParts"
 
 __doc__ = """
 Auto select all parts and panelize

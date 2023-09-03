@@ -2,10 +2,10 @@ from __future__ import division
 
 # METADATA
 
-__title__ = "MultiPanel"
+__title__ = "MultiParts"
 
 __doc__ = """
-Select Multiple/Single Parts and panelize
+Select Multiple/Single Part(s) and panelize
 """
 __author__ = "Symon Kipkemei"
 __helpurl__ = "https://www.linkedin.com/in/symon-kipkemei/"

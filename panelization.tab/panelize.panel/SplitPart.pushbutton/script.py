@@ -1,28 +1,22 @@
 # METADATA
-__title__ = "SinglePanel"
+################################################################################################################################
 
-__doc__ = """
-Create a single panel of 4' 
-from a selected Part
+
+__title__ = "SplitPart"
+
+__doc__ = """ 
+Select a single part and split into two equal Parts
 """
-
 __author__ = "Symon Kipkemei"
 __helpurl__ = "https://www.linkedin.com/in/symon-kipkemei/"
-
 __min_revit_ver__ = 2020
 __max_revit_ver__ = 2025
 
 # IMPORTS
 
-from Autodesk.Revit.DB import *
-from Autodesk.Revit.DB import Transaction, Element, ElementId, FilteredElementCollector
-from Autodesk.Revit.DB.Structure import StructuralType
-from Autodesk.Revit.UI.Selection import ObjectType
-
-from _create import _parts as g
 from _create import _auto as a
+from _create import _parts as g
 from _create import _errorhandler as eh
-
 import clr
 
 clr.AddReference("System")
@@ -30,6 +24,7 @@ clr.AddReference("System")
 from pyrevit import forms
 
 # VARIABLES
+
 app = __revit__.Application  # represents the Revit Autodesk Application
 doc = __revit__.ActiveUIDocument.Document  # obj used to create new instances of elements within the active project
 uidoc = __revit__.ActiveUIDocument  # obj that represent the current active project
@@ -41,17 +36,22 @@ active_level = doc.ActiveView.GenLevel
 # FUNCTIONS
 
 def main():
+    """Auto split tool"""
     try:
         part = g.select_part()
-        a.auto_parts(__title__, part, multiple=True)
-    except eh.CannotPanelizeError:
-        forms.alert('Select a Part to Panelize')
-    except eh.CannotSplitPanelError:
-        forms.alert("Centre Index could not be established")
+        host_wall_id = g.get_host_wall_id(part)
+        host_wall_type_id = g.get_host_wall_type_id(host_wall_id)
+        layer_index = g.get_layer_index(part)
+        lap_type_id, side_of_wall, exterior = g.get_wallsweep_parameters(layer_index, host_wall_type_id)
+
+        reveal_plane_coordinate_0 = g.get_reveal_coordinate_at_0(__title__, part)
+        distance = g.get_part_centre_index(part, reveal_plane_coordinate_0)
+
+        a.auto_place_reveal(__title__, host_wall_id, lap_type_id, distance, side_of_wall)
+
     except eh.VariableDistanceNotFoundError:
         forms.alert("The variable distance could not be established")
-    except Exception:
-        pass
+
 
 if __name__ == "__main__":
     main()

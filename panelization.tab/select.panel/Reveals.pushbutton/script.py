@@ -1,8 +1,8 @@
 # METADATA
-__title__ = "RevealsOnFace"
+__title__ = "FaceReveals"
 
 __doc__ = """
-Select all reveals on a face
+Select all reveals on a part face
 """
 
 __author__ = "Symon Kipkemei"

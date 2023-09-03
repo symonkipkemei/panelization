@@ -34,12 +34,14 @@ uidoc = __revit__.ActiveUIDocument  # obj that represent the current active proj
 # ________________________________________________________________________________________________
 
 
-def display_form(data, header, table_name):
+def display_form(data, header, table_name, last_line_color='color:red;'):
     output = script.get_output()
     output.center()
     output.add_style('body { color: blue; }')
     output.make_bar_chart(version=None)
-    tt = output.print_table(table_data=data, title=table_name, columns=header, last_line_style='color:red;font:bold')
+    tt = output.print_table(table_data=data, title=table_name, columns=header, last_line_style=last_line_color)
+
+    #'color:red;'
 
 
 def single_digit_value():

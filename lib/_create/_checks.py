@@ -83,7 +83,8 @@ def check_if_parts_panelized(parts):
     parts_to_panelize = []
     for part in parts:
         part_length = part.get_Parameter(BuiltInParameter.DPART_LENGTH_COMPUTED).AsDouble()
-        if part_length > 4:
+        part_length = round(part_length, 2)
+        if part_length > 4.0:
             parts_to_panelize.append(part)
 
     return parts_to_panelize

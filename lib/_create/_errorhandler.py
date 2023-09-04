@@ -57,3 +57,8 @@ class JointConditionSwallower(IFailuresPreprocessor):
 #catch variable distance cannot  be found
 class VariableDistanceNotFoundError(Exception):
     pass
+
+# catch reveal not selected error
+class RevealNotSelectedError(Exception):
+    pass
+

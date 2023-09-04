@@ -17,6 +17,7 @@ from Autodesk.Revit.DB import *
 from Autodesk.Revit.DB import Transaction, Element, ElementId, FilteredElementCollector
 from Autodesk.Revit.DB.Structure import StructuralType
 from Autodesk.Revit.UI.Selection import ObjectType
+from Autodesk.Revit.UI.Selection import ISelectionFilter
 
 from _create import _parts as g
 from _create import _auto as a
@@ -25,7 +26,9 @@ from _create import _errorhandler as eh
 import clr
 
 clr.AddReference("System")
+clr.AddReference('System.Collections')
 
+from System.Collections.Generic import List, ICollection
 from pyrevit import forms
 
 # VARIABLES
@@ -36,21 +39,83 @@ uidoc = __revit__.ActiveUIDocument  # obj that represent the current active proj
 active_view = doc.ActiveView
 active_level = doc.ActiveView.GenLevel
 
-
 # FUNCTIONS
 
+import clr
+
+
+# a class to filter selections to reveals only
+class RevealSelectionFilter(ISelectionFilter):
+    def AllowElement(self, element):
+        if element.Category.Name == "Reveals":
+            return True
+        return False
+
+    def AllowReference(self, refer, point):
+        return False
+
+
+# select a reveal
+def select_reveal():
+    reveal_filter = RevealSelectionFilter()
+    reference = uidoc.Selection.PickObject(ObjectType.Element,reveal_filter)
+    reveal = uidoc.Document.GetElement(reference)
+    if str(type(reveal)) == "<type 'WallSweep'>":
+        return reveal
+    else:
+        raise eh.RevealNotSelectedError
+
+
+# identify the host id
+
+
+def get_wall_side(reveal):
+    wall_sweep_info = reveal.GetWallSweepInfo()
+    wall_side = wall_sweep_info.WallSide
+    return wall_side
+
+
+def get_host_wall_id(reveal):
+    host_ids = reveal.GetHostIds()
+    host_id = host_ids[0]
+
+    return host_id
+
+
+# select all reveals that have similar id and face
+
+def get_filtered_reveals(reference_host_id, reference_wall_side):
+    filtered_reveals = []
+
+    all_reveals = FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_Reveals). \
+        WhereElementIsNotElementType().ToElements()
+
+    for reveal in all_reveals:
+        wall_side = get_wall_side(reveal)
+        host_id = get_host_wall_id(reveal)
+
+        if wall_side == reference_wall_side and host_id == reference_host_id:
+            filtered_reveals.append(reveal.Id)
+
+    return filtered_reveals
+
+
+def select_reveals(filtered_reveals):
+    uidoc.Selection.SetElementIds(filtered_reveals)
+
+
+# filter reveals to same host id and face
+
 def main():
-    try:
-        part = g.select_part()
-        a.auto_parts(__title__, part, multiple=True)
-    except eh.CannotPanelizeError:
-        forms.alert('Select a Part to Panelize')
-    except eh.CannotSplitPanelError:
-        forms.alert("Centre Index could not be established")
-    except eh.VariableDistanceNotFoundError:
-        forms.alert("The variable distance could not be established")
-    except Exception:
-        pass
+    reveal = select_reveal()
+    reference_host_id = get_host_wall_id(reveal)
+    reference_wall_side = get_wall_side(reveal)
+    filtered_reveals = get_filtered_reveals(reference_host_id, reference_wall_side)
+
+    # Create a C# List[int] and add the Python list elements to it
+    filtered_reveals_collection = List[ElementId](filtered_reveals)
+    select_reveals(filtered_reveals_collection)
+
 
 if __name__ == "__main__":
     main()

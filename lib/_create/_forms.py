@@ -69,7 +69,7 @@ def displacement_distance_form():
                 count += 1
         if count == len(d_distance):
             break
-    return d_distance
+    return float(d_distance)
 
 
 def select_part_type():

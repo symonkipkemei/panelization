@@ -24,6 +24,7 @@ clr.AddReference("System")
 from _create import _auto as a
 from _create import _parts as g
 from _create import _checks as cc
+from _create import  _forms as f
 from _create import  _errorhandler as eh
 # VARIABLES
 ################################################################################################################################
@@ -46,10 +47,10 @@ def main():
     exterior_parts, interior_parts = g.filter_exterior_interior_parts(parts)
 
     all_parts = exterior_parts + interior_parts
-
+    displacement_distance = f.displacement_distance_form()
     for part in all_parts:
         try:
-            a.auto_parts(__title__, part)
+            a.auto_parts(__title__, part,displacement_distance,multiple=True)
         except Exception:
             pass
 

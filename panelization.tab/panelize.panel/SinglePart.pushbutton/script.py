@@ -21,12 +21,14 @@ from Autodesk.Revit.UI.Selection import ObjectType
 from _create import _parts as g
 from _create import _auto as a
 from _create import _errorhandler as eh
+from _create import _forms as f
 
 import clr
 
 clr.AddReference("System")
 
 from pyrevit import forms
+
 
 # VARIABLES
 app = __revit__.Application  # represents the Revit Autodesk Application
@@ -41,8 +43,9 @@ active_level = doc.ActiveView.GenLevel
 
 def main():
     try:
+        displacement_distance = f.displacement_distance_form()
         part = g.select_part()
-        a.auto_parts(__title__, part, multiple=True)
+        a.auto_parts(__title__, part, displacement_distance, multiple=True)
     except eh.CannotPanelizeError:
         forms.alert('Select a Part to Panelize')
     except eh.CannotSplitPanelError:

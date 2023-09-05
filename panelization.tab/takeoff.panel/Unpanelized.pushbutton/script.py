@@ -20,7 +20,7 @@ from Autodesk.Revit.DB import *
 from Autodesk.Revit.DB import Transaction, Element, ElementId, FilteredElementCollector
 from Autodesk.Revit.DB.Structure import StructuralType
 from Autodesk.Revit.UI.Selection import ObjectType
-
+from Autodesk.Revit.DB import OverrideGraphicSettings
 from _create import _auto as a
 from _create import _parts as g
 
@@ -28,6 +28,7 @@ from _create import _forms as f
 from _create import _checks as c
 from pyrevit import forms
 import clr
+from _create import
 
 clr.AddReference("System")
 
@@ -75,9 +76,15 @@ def get_unpanalized_parts_data(unpanelized_parts):
     return parts_data
 
 
-def isolate_unpanelized_parts():
+def highlight_unpanelized_parts(unpanelized_parts):
     """Color code unapnelized parts for ease of identification"""
-    pass
+    for part in unpanelized_parts:
+        fill_pattern_id =
+        OverrideGraphicSettings.SetSurfaceForegroundPatternId(fill_pattern_id)
+        OverrideGraphicSettings.SetSurfaceForegroundPatternColor()
+
+
+
 
 
 def main():

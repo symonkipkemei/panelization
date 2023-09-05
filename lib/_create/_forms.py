@@ -41,7 +41,7 @@ def display_form(data, header, table_name, last_line_color='color:red;'):
     output.make_bar_chart(version=None)
     tt = output.print_table(table_data=data, title=table_name, columns=header, last_line_style=last_line_color)
 
-    #'color:red;'
+    # 'color:red;'
 
 
 def single_digit_value():
@@ -56,6 +56,20 @@ def single_digit_value():
         if count == len(cost_per_sf):
             break
     return cost_per_sf
+
+
+def displacement_distance_form():
+    while True:
+        d_distance = forms.ask_for_string(default='0.5', prompt='Enter displacement distance from edges of openings:',
+                                          title='Panelization')
+        count = 0
+        digits = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "."]
+        for ltr in d_distance:
+            if ltr in digits:
+                count += 1
+        if count == len(d_distance):
+            break
+    return d_distance
 
 
 def select_part_type():

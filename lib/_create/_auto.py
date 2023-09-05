@@ -125,7 +125,7 @@ def auto_panel(__title__, host_wall_id, lap_type_id, reveal_indexes, side_of_wal
         print ('The following error has occurred: {}'.format(e))
 
 
-def auto_parts(__title__, part, multiple = True):
+def auto_parts(__title__, part, displacement_distance, multiple=True):
     """
     Identifies :
     1. the Parts ( exterior, interior or partition ) intuitively
@@ -154,11 +154,15 @@ def auto_parts(__title__, part, multiple = True):
     part_length = g.get_part_length(part)
     left_edge, right_edge = g.get_edge_index_v2(part_length, centre_index)
 
-    displacement = 0.5
     hosted_windows = o.get_hosted_fenestrations(host_wall_id, BuiltInCategory.OST_Windows)
     hosted_doors = o.get_hosted_fenestrations(host_wall_id, BuiltInCategory.OST_Doors)
 
-    out_ranges = o.get_out_ranges(part, hosted_doors, hosted_windows, reveal_plane_coordinate_0, displacement)
+    # check if part has openings or not
+    if len(hosted_windows) == 0 and len(hosted_doors) == 0:
+        out_ranges = []
+    else:
+        displacement = displacement_distance
+        out_ranges = o.get_out_ranges(part, hosted_doors, hosted_windows, reveal_plane_coordinate_0, displacement)
 
     if multiple:
         reveal_indexes = g.get_reveal_indexes_v2(left_edge, right_edge, out_ranges, exterior)
@@ -166,5 +170,3 @@ def auto_parts(__title__, part, multiple = True):
         reveal_indexes = g.get_single_panel_reveal_indexes(left_edge, right_edge, exterior)
 
     auto_panel(__title__, host_wall_id, lap_type_id, reveal_indexes, side_of_wall)
-
-

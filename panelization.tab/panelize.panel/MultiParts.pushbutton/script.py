@@ -24,7 +24,7 @@ clr.AddReference("System")
 from _create import _auto as a
 from _create import _parts as g
 from _create import _errorhandler as eh
-
+from _create import  _forms as f
 from pyrevit import forms
 
 # VARIABLES
@@ -42,9 +42,10 @@ active_level = doc.ActiveView.GenLevel
 
 def main():
     parts = g.select_parts()
+    displacement_distance = f.displacement_distance_form()
     for part in parts:
         try:
-            a.auto_parts(__title__, part, multiple=True)
+            a.auto_parts(__title__, part, displacement_distance, multiple=True)
         except eh.CannotPanelizeError:
             forms.alert('Select a Part to Panelize')
         except eh.CannotSplitPanelError:

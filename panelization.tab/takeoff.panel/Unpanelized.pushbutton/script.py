@@ -21,6 +21,7 @@ from Autodesk.Revit.DB import Transaction, Element, ElementId, FilteredElementCo
 from Autodesk.Revit.DB.Structure import StructuralType
 from Autodesk.Revit.UI.Selection import ObjectType
 from Autodesk.Revit.DB import OverrideGraphicSettings
+from Autodesk.Revit.DB import View
 from _create import _auto as a
 from _create import _parts as g
 
@@ -28,7 +29,6 @@ from _create import _forms as f
 from _create import _checks as c
 from pyrevit import forms
 import clr
-from _create import
 
 clr.AddReference("System")
 
@@ -78,23 +78,33 @@ def get_unpanalized_parts_data(unpanelized_parts):
 
 def highlight_unpanelized_parts(unpanelized_parts):
     """Color code unapnelized parts for ease of identification"""
-    for part in unpanelized_parts:
-        fill_pattern_id =
-        OverrideGraphicSettings.SetSurfaceForegroundPatternId(fill_pattern_id)
-        OverrideGraphicSettings.SetSurfaceForegroundPatternColor()
+    # overide graphics view of unpanelized parts
 
+    solid_fill_id = ElementId(20)
+    clr_bytes = [255, 000, 128]
+    solid_fill_color = Color(clr_bytes[0], clr_bytes[1], clr_bytes[2])
+    graphics_settings = OverrideGraphicSettings()
+    graphics_settings.SetSurfaceForegroundPatternId(solid_fill_id)
+    graphics_settings.SetSurfaceForegroundPatternColor(solid_fill_color)
 
-
+    if len(unpanelized_parts) != 0:
+        with Transaction(doc, __title__) as t:
+            t.Start()
+            for part in unpanelized_parts:
+                active_view.SetElementOverrides(part.Id, graphics_settings)
+            t.Commit()
 
 
 def main():
     parts = get_unpanelized_parts()
     parts_data = get_unpanalized_parts_data(parts)
 
+    highlight_unpanelized_parts(parts)
+
     # display panels data
     header = ["PART ID", "HEIGHT(F)", "LENGTH(F)", "BASE LEVEL"]
 
-    f.display_form(parts_data, header, "Unpanelized parts",last_line_color='color:blue;')
+    f.display_form(parts_data, header, "Unpanelized parts", last_line_color='color:blue;')
 
 
 if __name__ == "__main__":

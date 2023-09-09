@@ -403,7 +403,6 @@ def sort_parts_by_side(parts):
         elif exterior == None:
             core_parts.append(part)
 
-
     return exterior_parts, interior_parts
 
 
@@ -451,3 +450,15 @@ def highlight_unpanelized_parts(unpanelized_parts, __title__):
 
 def remove_graphics():
     pass
+
+
+def switch_directions(exterior, bool_option=False):
+    if bool_option:
+        if exterior == True:
+            exterior = False
+        else:
+            exterior = True
+    else:
+        exterior = exterior
+
+    return exterior

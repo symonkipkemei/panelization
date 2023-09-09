@@ -164,6 +164,8 @@ def auto_parts(__title__, part, displacement_distance, multiple=True):
         displacement = displacement_distance
         out_ranges = o.get_out_ranges(part, hosted_doors, hosted_windows, reveal_plane_coordinate_0, displacement)
 
+    exterior = g.switch_directions(exterior, bool_option=True)
+
     if multiple:
         reveal_indexes = g.get_reveal_indexes_v2(left_edge, right_edge, out_ranges, exterior)
     else:

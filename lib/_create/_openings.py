@@ -16,6 +16,7 @@ from _create import _auto as a
 from _create import _test as t
 from _create import _parts as g
 from _create import _coordinate as c
+from _create import _checks as cc
 
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> VARIABLES
 
@@ -110,6 +111,11 @@ def get_fenestration_out_range(fenestration_left_index, fenestration_right_index
     This creates the range the reveals cannot be placed
     :return: the left/right window range, this is in reveal index format
     """
+
+    # window width
+    fenestration_width = fenestration_left_index - fenestration_right_index
+    displacement = cc.check_displacement_distance(displacement, fenestration_width)
+
     # window left edge
     left_box_range_1 = fenestration_left_index - displacement
     left_box_range_2 = fenestration_left_index + displacement

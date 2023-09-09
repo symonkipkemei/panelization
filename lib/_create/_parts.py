@@ -190,11 +190,12 @@ def get_reveal_indexes_v2(left_edge, right_edge, out_ranges, exterior=True):
             # skipping the out range if there is a window
             left_edge = o.skip_out_range(left_edge, out_ranges, exterior=True)
             # remaining length established, will determine when panelization is complete ( < 4 script breaks)
-            rem_length = left_edge - right_edge
+            reveal_edge_width = 0.078125
+            rem_length = left_edge - (right_edge - reveal_edge_width)
             # the new left edge appended to the list
             reveal_indexes.append(left_edge)
 
-            if rem_length < 4:
+            if rem_length < 4.0000:
                 if rem_length < minimum_panel:
                     # remove the last record on list to allow for further splitting
                     del reveal_indexes[-1]
@@ -220,7 +221,7 @@ def get_reveal_indexes_v2(left_edge, right_edge, out_ranges, exterior=True):
             right_edge = o.skip_out_range(right_edge, out_ranges, exterior=False)
             rem_length = left_edge - right_edge
             reveal_indexes.append(right_edge)
-            if rem_length < 4:
+            if rem_length < 4.0000:
                 if rem_length < minimum_panel:
                     # remove the last record on list to allow for further splitting
                     del reveal_indexes[-1]

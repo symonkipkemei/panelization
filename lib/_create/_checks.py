@@ -19,6 +19,7 @@ from _create import _coordinate as c
 from _create import _openings as o
 from _create import _errorhandler as e
 from pyrevit import forms
+
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> VARIABLES
 
 app = __revit__.Application  # represents the Revit Autodesk Application
@@ -26,31 +27,30 @@ doc = __revit__.ActiveUIDocument.Document  # obj used to create new instances of
 uidoc = __revit__.ActiveUIDocument  # obj that represent the current active project
 
 
-def check_centre_index(__title__,part,centre_index):
+def check_centre_index(__title__, part, centre_index):
     """Check if the centre index is correct"""
     host_wall_id = p.get_host_wall_id(part)
     layer_index = p.get_layer_index(part)
     host_wall_type_id = p.get_host_wall_type_id(host_wall_id)
-    lap_type_id, side_of_wall, exterior = p.get_wallsweep_parameters(layer_index,host_wall_type_id)
+    lap_type_id, side_of_wall, exterior = p.get_wallsweep_parameters(layer_index, host_wall_type_id)
 
     length_before = p.get_part_length(part)
 
     # split the part into two
-    reveal = a.auto_place_reveal(__title__,host_wall_id,lap_type_id,centre_index,side_of_wall)
+    reveal = a.auto_place_reveal(__title__, host_wall_id, lap_type_id, centre_index, side_of_wall)
 
     length_after = p.get_part_length(part)
 
     # delete reveal after split
     p.delete_element(__title__, reveal.Id)
 
-    half_length = length_before/2
-    reveal_size = 0.0390625 #3/64"
-    length_parameter = round(half_length,7) + reveal_size
-    if round(length_after,7) == length_parameter:
-        centre_index  = True
+    half_length = length_before / 2
+    reveal_size = 0.0390625  # 3/64"
+    length_parameter = round(half_length, 7) + reveal_size
+    if round(length_after, 7) == length_parameter:
+        centre_index = True
     else:
         centre_index = False
-
 
     return centre_index
 
@@ -74,17 +74,3 @@ def check_if_host_wall_edited(parts):
     return orthogonal_parts
 
 
-def check_if_parts_panelized(parts):
-    """
-    Filter parts that have not been panelized only, to avoid panelizing panels further
-    :param parts: list of parts selected from an open revit document
-    :return: non-panelized parts
-    """
-    parts_to_panelize = []
-    for part in parts:
-        part_length = part.get_Parameter(BuiltInParameter.DPART_LENGTH_COMPUTED).AsDouble()
-        part_length = round(part_length, 2)
-        if part_length > 4.0:
-            parts_to_panelize.append(part)
-
-    return parts_to_panelize

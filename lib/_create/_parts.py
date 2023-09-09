@@ -384,7 +384,7 @@ def get_edge_index_v2(length, centre_index):
     return left_edge, right_edge
 
 
-def filter_exterior_interior_parts(parts):
+def sort_parts_by_side(parts):
     exterior_parts = []
     interior_parts = []
     core_parts = []
@@ -405,3 +405,49 @@ def filter_exterior_interior_parts(parts):
 
 
     return exterior_parts, interior_parts
+
+
+def sort_parts_by_length(parts):
+    """
+    sort parts based on it's length, to underpanelized, panalized and unpanalized
+    """
+    underpanelized = []
+    panalized = []
+    unpanalized = []
+    minimum_panel = 2.0
+
+    for part in parts:
+        part_length = part.get_Parameter(BuiltInParameter.DPART_LENGTH_COMPUTED).AsDouble()
+        part_length = round(part_length, 2)
+        if part_length > 4.0:
+            unpanalized.append(part)
+        elif part_length < minimum_panel:
+            underpanelized.append(part)
+        else:
+            panalized.append(part)
+
+    return underpanelized, panalized, unpanalized
+
+
+def highlight_unpanelized_parts(unpanelized_parts, __title__):
+    """Color code unapnelized parts for ease of identification"""
+    # overide graphics view of unpanelized parts
+
+    solid_fill_id = ElementId(20)
+    clr_bytes = [255, 000, 128]
+    solid_fill_color = Color(clr_bytes[0], clr_bytes[1], clr_bytes[2])
+    graphics_settings = OverrideGraphicSettings()
+    graphics_settings.SetSurfaceForegroundPatternId(solid_fill_id)
+    graphics_settings.SetSurfaceForegroundPatternColor(solid_fill_color)
+
+    if len(unpanelized_parts) != 0:
+        with Transaction(doc, __title__) as t:
+            t.Start()
+            for part in unpanelized_parts:
+                active_view.SetElementOverrides(part.Id, graphics_settings)
+            t.Commit()
+    return graphics_settings
+
+
+def remove_graphics():
+    pass

@@ -44,7 +44,7 @@ active_level = doc.ActiveView.GenLevel
 # FUNCTIONS
 
 
-def get_parts_data(part_type="both"):
+def get_parts_data(part_type="External and Internal Parts"):
     parts = g.select_all_parts()
     exterior_parts, interior_parts = g.filter_exterior_interior_parts(parts)
     if part_type == "External Parts":
@@ -55,6 +55,8 @@ def get_parts_data(part_type="both"):
         filtered_parts = interior_parts + exterior_parts
     else:
         filtered_parts = None
+
+def get_parts_data(filtered_parts):
 
     parts_data = {}
 
@@ -78,7 +80,6 @@ def get_parts_data(part_type="both"):
 
 def get_parts_type_data(parts_data):
     data = {}
-
     for part_data in parts_data.values():  # the default type
         default_part_type = part_data[0]
         count = 0
@@ -93,7 +94,7 @@ def get_parts_type_data(parts_data):
     return data
 
 
-def get_summary_data(parts_data, parts_type_data, cost_per_sf ):
+def get_summary_data(parts_data, parts_type_data, cost_per_sf):
     final_data = []
     sum_panels = 0
     sum_area = 0
@@ -120,19 +121,61 @@ def get_summary_data(parts_data, parts_type_data, cost_per_sf ):
 
 
 def main():
-    cost_per_sf = float(f.single_digit_value())
-    parts_type = f.select_part_type()
-    parts_data = get_parts_data(parts_type)
-    parts_type_data = get_parts_type_data(parts_data)
 
-    final_data = get_summary_data(parts_data, parts_type_data,cost_per_sf)
+    # select all parts
+    parts = g.select_all_parts()
+    exterior_parts, interior_parts = g.sort_parts_by_side(parts)
 
-    # display panels data
-    header = ["HEIGHT(F)", "LENGTH(F)", "THICKNESS(F)", "VOLUME (CF) ", "BASE LEVEL", "AREA (SF)", "COUNT",
-              "TOTAL AREA(SF)",
-              "COST PER SF (USD)", " COST(USD)"]
 
-    f.display_form(final_data, header, "Parts Material Takeoff" + "-" + parts_type)
+    #user selects which parts for take off
+
+    ops = ['External Parts', 'Internal Parts', 'External and Internal Parts']
+    user_choice = forms.SelectFromList.show(ops, button_name='Select Option',
+                                            title="Panel Material Takeoff", height=250)
+
+    if user_choice == ops[0]:
+        filtered_parts = exterior_parts
+    elif user_choice == ops[1]:
+        filtered_parts = interior_parts
+    elif user_choice == ops[2]:
+        filtered_parts = interior_parts + exterior_parts
+    else:
+        filtered_parts = None
+
+    # filter by length, take off of panelized and underpanalized parts
+    underpanalized, panelized , unpanalized = g.sort_parts_by_length(filtered_parts)
+
+    selected_parts = underpanalized + panelized
+
+    if len(selected_parts) != 0:
+        cost_per_sf = float(f.single_digit_value())
+
+        # filter to parts that have been panelized
+        parts_data = get_parts_data(selected_parts)
+        parts_type_data = get_parts_type_data(parts_data)
+
+        final_data = get_summary_data(parts_data, parts_type_data, cost_per_sf)
+
+        # display panels data
+        header = ["HEIGHT(F)", "LENGTH(F)", "THICKNESS(F)", "VOLUME (CF) ", "BASE LEVEL", "AREA (SF)", "COUNT",
+                  "TOTAL AREA(SF)",
+                  "COST PER SF (USD)", " COST(USD)"]
+
+        f.display_form(final_data, header, "Parts Material Takeoff" + "-" + user_choice)
+
+        if len(unpanalized) != 0:
+            g.highlight_unpanelized_parts(unpanalized, __title__)
+            forms.alert("Highlighted parts (red) have not been panelized")
+
+        else:
+            forms.alert("Congratualtions! All parts have been panelized")
+
+
+    else:
+        forms.alert("Parts (red) not panelized (parts < 4 ). Proceed with Panelization")
+        g.highlight_unpanelized_parts(unpanalized, __title__)
+
+
 
 
 if __name__ == "__main__":

@@ -74,3 +74,9 @@ def check_if_host_wall_edited(parts):
     return orthogonal_parts
 
 
+def check_displacement_distance(displacement_distance, fenestration_width):
+    limit = fenestration_width/2
+    if displacement_distance >= limit:
+        displacement_distance = limit - 1
+        forms.alert("The displacement distance set is beyond half width fenestration limit")
+    return displacement_distance

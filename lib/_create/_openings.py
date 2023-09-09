@@ -43,6 +43,10 @@ def get_fenestration_width(fenestration_id):
     fenestration_type = fenestration.Symbol
     width = fenestration_type.get_Parameter(BuiltInParameter.DOOR_WIDTH).AsDouble()
 
+    # interchangabley the width can be 0 but rough width has dimensions
+    if width == 0:
+        width = fenestration_type.get_Parameter(BuiltInParameter.FAMILY_ROUGH_WIDTH_PARAM).AsDouble()
+
     return width
 
 

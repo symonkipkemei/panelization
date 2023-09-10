@@ -155,7 +155,7 @@ def main():
 
         if len(unpanalized) != 0:
             g.highlight_unpanelized_parts(unpanalized, __title__)
-            forms.alert("Highlighted parts (red) have not been panelized")panelization.tab/select.panel/Reveals.pushbutton/script.py
+            forms.alert("Highlighted parts (red) have not been panelized")
 
         else:
             forms.alert("Congratualtions! All parts have been panelized")

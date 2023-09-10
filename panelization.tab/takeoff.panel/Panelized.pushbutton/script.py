@@ -44,20 +44,7 @@ active_level = doc.ActiveView.GenLevel
 # FUNCTIONS
 
 
-def get_parts_data(part_type="External and Internal Parts"):
-    parts = g.select_all_parts()
-    exterior_parts, interior_parts = g.filter_exterior_interior_parts(parts)
-    if part_type == "External Parts":
-        filtered_parts = exterior_parts
-    elif part_type == "Internal Parts":
-        filtered_parts = interior_parts
-    elif part_type == "External and Internal Parts":
-        filtered_parts = interior_parts + exterior_parts
-    else:
-        filtered_parts = None
-
 def get_parts_data(filtered_parts):
-
     parts_data = {}
 
     for part in filtered_parts:
@@ -120,14 +107,8 @@ def get_summary_data(parts_data, parts_type_data, cost_per_sf):
     return final_data
 
 
-def main():
-
-    # select all parts
-    parts = g.select_all_parts()
-    exterior_parts, interior_parts = g.sort_parts_by_side(parts)
-
-
-    #user selects which parts for take off
+def user_filters_part_type(exterior_parts,interior_parts):
+    # user selects which parts for take off
 
     ops = ['External Parts', 'Internal Parts', 'External and Internal Parts']
     user_choice = forms.SelectFromList.show(ops, button_name='Select Option',
@@ -142,8 +123,17 @@ def main():
     else:
         filtered_parts = None
 
+    return filtered_parts, user_choice
+
+
+def main():
+    # select all parts
+    parts = g.select_all_parts()
+    exterior_parts, interior_parts = g.sort_parts_by_side(parts)
+    filtered_parts, user_choice = user_filters_part_type(exterior_parts, interior_parts)
+
     # filter by length, take off of panelized and underpanalized parts
-    underpanalized, panelized , unpanalized = g.sort_parts_by_length(filtered_parts)
+    underpanalized, panelized, unpanalized = g.sort_parts_by_length(filtered_parts)
 
     selected_parts = underpanalized + panelized
 
@@ -165,7 +155,7 @@ def main():
 
         if len(unpanalized) != 0:
             g.highlight_unpanelized_parts(unpanalized, __title__)
-            forms.alert("Highlighted parts (red) have not been panelized")
+            forms.alert("Highlighted parts (red) have not been panelized")panelization.tab/select.panel/Reveals.pushbutton/script.py
 
         else:
             forms.alert("Congratualtions! All parts have been panelized")
@@ -174,8 +164,6 @@ def main():
     else:
         forms.alert("Parts (red) not panelized (parts < 4 ). Proceed with Panelization")
         g.highlight_unpanelized_parts(unpanalized, __title__)
-
-
 
 
 if __name__ == "__main__":

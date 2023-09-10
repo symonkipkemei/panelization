@@ -58,7 +58,7 @@ class RevealSelectionFilter(ISelectionFilter):
 # select a reveal
 def select_reveal():
     reveal_filter = RevealSelectionFilter()
-    reference = uidoc.Selection.PickObject(ObjectType.Element,reveal_filter)
+    reference = uidoc.Selection.PickObject(ObjectType.Element, reveal_filter)
     reveal = uidoc.Document.GetElement(reference)
     if str(type(reveal)) == "<type 'WallSweep'>":
         return reveal
@@ -84,12 +84,16 @@ def get_host_wall_id(reveal):
 
 # select all reveals that have similar id and face
 
-def get_filtered_reveals(reference_host_id, reference_wall_side):
-    filtered_reveals = []
 
+def select_all_reveals():
     all_reveals = FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_Reveals). \
         WhereElementIsNotElementType().ToElements()
 
+    return all_reveals
+
+
+def get_filtered_reveals(reference_host_id, reference_wall_side, all_reveals):
+    filtered_reveals = []
     for reveal in all_reveals:
         wall_side = get_wall_side(reveal)
         host_id = get_host_wall_id(reveal)
@@ -100,7 +104,7 @@ def get_filtered_reveals(reference_host_id, reference_wall_side):
     return filtered_reveals
 
 
-def select_reveals(filtered_reveals):
+def display_selected_reveals(filtered_reveals):
     uidoc.Selection.SetElementIds(filtered_reveals)
 
 
@@ -110,11 +114,12 @@ def main():
     reveal = select_reveal()
     reference_host_id = get_host_wall_id(reveal)
     reference_wall_side = get_wall_side(reveal)
-    filtered_reveals = get_filtered_reveals(reference_host_id, reference_wall_side)
+    all_reveals = select_all_reveals()
+    filtered_reveals = get_filtered_reveals(reference_host_id, reference_wall_side,all_reveals)
 
     # Create a C# List[int] and add the Python list elements to it
     filtered_reveals_collection = List[ElementId](filtered_reveals)
-    select_reveals(filtered_reveals_collection)
+    display_selected_reveals(filtered_reveals_collection)
 
 
 if __name__ == "__main__":

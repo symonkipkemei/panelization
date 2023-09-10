@@ -49,11 +49,11 @@ active_level = doc.ActiveView.GenLevel
 def get_unpanelized_parts():
     # select interior and exterior parts
     parts = g.select_all_parts()
-    exterior_parts, interior_parts = g.filter_exterior_interior_parts(parts)
+    exterior_parts, interior_parts = g.sort_parts_by_side(parts)
 
     # filter into parts that have not been panelized
-    unpanelized_exterior_parts = c.check_if_parts_panelized(exterior_parts)
-    unpanelized_interior_parts = c.check_if_parts_panelized(interior_parts)
+    underpanelized, panalized, unpanelized_exterior_parts = g.sort_parts_by_length(exterior_parts)
+    underpanelized, panalized, unpanelized_interior_parts = g.sort_parts_by_length(interior_parts)
 
     unpanelized_parts = unpanelized_exterior_parts + unpanelized_interior_parts
     # display there id, length, height, base_level

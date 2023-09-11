@@ -43,9 +43,11 @@ active_level = doc.ActiveView.GenLevel
 
 def main():
     try:
-        displacement_distance = f.displacement_distance_form()
         part = g.select_part()
-        a.auto_parts(__title__, part, displacement_distance, multiple=True)
+        switch_option = f.switch_option()
+        displacement_distance = f.displacement_distance_form()
+
+        a.auto_parts(__title__, part, displacement_distance,switch_option, multiple=True)
     except eh.CannotPanelizeError:
         forms.alert('Select a Part to Panelize')
     except eh.CannotSplitPanelError:

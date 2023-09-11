@@ -44,13 +44,13 @@ def main():
 
     exterior_parts, interior_parts = g.sort_parts_by_side(selected_parts)
     all_parts = exterior_parts + interior_parts
-    all_parts = cc.check_if_host_wall_edited(all_parts)
+    #all_parts = cc.check_if_host_wall_edited(all_parts)
     underpanelized, panalized, non_panelized_parts = g.sort_parts_by_length(all_parts)
-
+    switch_option = f.switch_option()
     displacement_distance = f.displacement_distance_form()
     for part in non_panelized_parts:
         try:
-            a.auto_parts(__title__, part,displacement_distance,multiple=True)
+            a.auto_parts(__title__, part, displacement_distance, switch_option, multiple=True)
         except Exception:
             pass
 

@@ -18,6 +18,7 @@ from _create import _openings as o
 from _create import _coordinate as c
 from _create import _errorhandler as eh
 from _create import _checks as cc
+from _create import _forms as ff
 
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> VARIABLES
 
@@ -125,7 +126,7 @@ def auto_panel(__title__, host_wall_id, lap_type_id, reveal_indexes, side_of_wal
         print ('The following error has occurred: {}'.format(e))
 
 
-def auto_parts(__title__, part, displacement_distance, multiple=True):
+def auto_parts(__title__, part, displacement_distance,switch_option, multiple=True):
     """
     Identifies :
     1. the Parts ( exterior, interior or partition ) intuitively
@@ -164,7 +165,8 @@ def auto_parts(__title__, part, displacement_distance, multiple=True):
         displacement = displacement_distance
         out_ranges = o.get_out_ranges(part, hosted_doors, hosted_windows, reveal_plane_coordinate_0, displacement)
 
-    exterior = g.switch_directions(exterior, bool_option=False)
+
+    exterior = g.switch_directions(exterior, bool_option=switch_option)
 
     if multiple:
         reveal_indexes = g.get_reveal_indexes_v2(left_edge, right_edge, out_ranges, exterior)

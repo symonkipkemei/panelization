@@ -79,3 +79,18 @@ def select_part_type():
                                             title="Panel Material Takeoff", height=250)
 
     return user_choice
+
+
+def switch_option():
+    ans = forms.ask_for_one_item(['L to R', 'R to L'], default='L to R', prompt='(L)eft to (R)ight [default]  or  (R)ight to (L)eft :',
+                           title='Panelization Direction')
+    if ans == "L to R":
+        option = False
+    elif ans == "R to L":
+        option = True
+
+    else:
+        option = False
+
+    return option
+

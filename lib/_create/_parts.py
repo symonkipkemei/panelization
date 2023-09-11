@@ -429,28 +429,59 @@ def sort_parts_by_length(parts):
     return underpanelized, panalized, unpanalized
 
 
-def highlight_unpanelized_parts(unpanelized_parts, __title__):
+def highlight_unpanelized_underpanelized_parts(__title__):
     """Color code unapnelized parts for ease of identification"""
-    # overide graphics view of unpanelized parts
+    # select all parts
+    parts = select_all_parts()
+    exterior_parts, interior_parts = sort_parts_by_side(parts)
+    filtered_parts = exterior_parts + interior_parts
+    underpanalized, panelized, unpanelized = sort_parts_by_length(filtered_parts)
 
     solid_fill_id = ElementId(20)
-    clr_bytes = [255, 000, 128]
-    solid_fill_color = Color(clr_bytes[0], clr_bytes[1], clr_bytes[2])
+
+    # color codes - unpanelized
+    graphics_settings_unpanelized = OverrideGraphicSettings()
+    graphics_settings_unpanelized.SetSurfaceForegroundPatternId(solid_fill_id)
+    clr_bytes = [255, 99, 71]
+    color_unpanelized = Color(clr_bytes[0], clr_bytes[1], clr_bytes[2])
+    graphics_settings_unpanelized.SetSurfaceForegroundPatternColor(color_unpanelized)
+
+    # color codes - underpanelized
+    graphics_settings_underpanelized = OverrideGraphicSettings()
+    graphics_settings_underpanelized.SetSurfaceForegroundPatternId(solid_fill_id)
+    clr_bytes = [251, 191, 0]
+    color_underpanelized = Color(clr_bytes[0], clr_bytes[1], clr_bytes[2])
+    graphics_settings_underpanelized.SetSurfaceForegroundPatternColor(color_unpanelized)
+
+    with Transaction(doc, __title__) as t:
+        t.Start()
+        if len(unpanelized) != 0:
+            for part in unpanelized:
+                active_view.SetElementOverrides(part.Id, graphics_settings_unpanelized)
+        if len(underpanalized) != 0:
+            for part in underpanalized:
+                active_view.SetElementOverrides(part.Id, graphics_settings_underpanelized)
+
+        t.Commit()
+
+    return graphics_settings_unpanelized, graphics_settings_underpanelized
+
+
+def remove_graphics(__title__):
+    parts = select_all_parts()
+    exterior_parts, interior_parts = sort_parts_by_side(parts)
+    filtered_parts = exterior_parts + interior_parts
+
     graphics_settings = OverrideGraphicSettings()
-    graphics_settings.SetSurfaceForegroundPatternId(solid_fill_id)
-    graphics_settings.SetSurfaceForegroundPatternColor(solid_fill_color)
+    graphics_settings.Dispose()
 
-    if len(unpanelized_parts) != 0:
-        with Transaction(doc, __title__) as t:
-            t.Start()
-            for part in unpanelized_parts:
-                active_view.SetElementOverrides(part.Id, graphics_settings)
-            t.Commit()
-    return graphics_settings
+    with Transaction(doc, __title__) as t:
+        t.Start()
 
+        active_view.SetElementOverrides(ElementId(571271), graphics_settings)
 
-def remove_graphics():
-    pass
+        t.Commit()
+
 
 
 def switch_directions(exterior, bool_option=False):

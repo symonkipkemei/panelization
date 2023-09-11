@@ -154,7 +154,7 @@ def main():
         f.display_form(final_data, header, "Parts Material Takeoff" + "-" + user_choice)
 
         if len(unpanalized) != 0:
-            g.highlight_unpanelized_parts(unpanalized, __title__)
+            g.highlight_unpanelized_underpanelized_parts(__title__)
             forms.alert("Highlighted parts (red) have not been panelized")
 
         else:
@@ -162,8 +162,9 @@ def main():
 
 
     else:
+        g.highlight_unpanelized_underpanelized_parts(__title__)
         forms.alert("Parts (red) not panelized (parts < 4 ). Proceed with Panelization")
-        g.highlight_unpanelized_parts(unpanalized, __title__)
+
 
 
 if __name__ == "__main__":

@@ -76,30 +76,14 @@ def get_unpanalized_parts_data(unpanelized_parts):
     return parts_data
 
 
-def highlight_unpanelized_parts(unpanelized_parts):
-    """Color code unapnelized parts for ease of identification"""
-    # overide graphics view of unpanelized parts
 
-    solid_fill_id = ElementId(20)
-    clr_bytes = [255, 000, 128]
-    solid_fill_color = Color(clr_bytes[0], clr_bytes[1], clr_bytes[2])
-    graphics_settings = OverrideGraphicSettings()
-    graphics_settings.SetSurfaceForegroundPatternId(solid_fill_id)
-    graphics_settings.SetSurfaceForegroundPatternColor(solid_fill_color)
-
-    if len(unpanelized_parts) != 0:
-        with Transaction(doc, __title__) as t:
-            t.Start()
-            for part in unpanelized_parts:
-                active_view.SetElementOverrides(part.Id, graphics_settings)
-            t.Commit()
 
 
 def main():
     parts = get_unpanelized_parts()
     parts_data = get_unpanalized_parts_data(parts)
 
-    highlight_unpanelized_parts(parts)
+    g.highlight_unpanelized_underpanelized_parts(__title__)
 
     # display panels data
     header = ["PART ID", "HEIGHT(F)", "LENGTH(F)", "BASE LEVEL"]

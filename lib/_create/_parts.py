@@ -200,7 +200,9 @@ def get_reveal_indexes_v2(left_edge, right_edge, out_ranges, exterior=True):
                     # remove the last record on list to allow for further splitting
                     del reveal_indexes[-1]
                     # the new left edge becomes the last item on list after deleting the last reveal
-                    left_edge = reveal_indexes[-1]
+                    if len(reveal_indexes) != 0:
+                        left_edge = reveal_indexes[-1]
+
                     # the part left behind is determined
                     part_left_behind = left_edge - right_edge
                     # determine the remainder left edge position
@@ -225,7 +227,8 @@ def get_reveal_indexes_v2(left_edge, right_edge, out_ranges, exterior=True):
                 if rem_length < minimum_panel:
                     # remove the last record on list to allow for further splitting
                     del reveal_indexes[-1]
-                    right_edge = reveal_indexes[-1]  # the right edge becomes the last item on list
+                    if len(reveal_indexes) != 0:
+                        right_edge = reveal_indexes[-1]  # the right edge becomes the last item on list
                     part_left_behind = left_edge - right_edge
                     reveal_edge_width = 0.078125  # subtracted from panel to allow it cut at 2'
                     rem = part_left_behind - (minimum_panel - reveal_edge_width)

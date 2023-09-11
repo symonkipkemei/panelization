@@ -52,8 +52,7 @@ def main():
         forms.alert("Centre Index could not be established")
     except eh.VariableDistanceNotFoundError:
         forms.alert("The variable distance could not be established")
-    except Exception:
-        pass
+
 
 if __name__ == "__main__":
     main()

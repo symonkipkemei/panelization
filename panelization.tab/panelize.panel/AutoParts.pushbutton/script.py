@@ -41,18 +41,20 @@ active_level = doc.ActiveView.GenLevel
 
 def main():
     selected_parts = g.select_all_parts()
-    non_panelized_parts = cc.check_if_parts_panelized(selected_parts)
-    parts = cc.check_if_host_wall_edited(non_panelized_parts)
 
-    exterior_parts, interior_parts = g.filter_exterior_interior_parts(parts)
-
+    exterior_parts, interior_parts = g.sort_parts_by_side(selected_parts)
     all_parts = exterior_parts + interior_parts
+    all_parts = cc.check_if_host_wall_edited(all_parts)
+    underpanelized, panalized, non_panelized_parts = g.sort_parts_by_length(all_parts)
+
     displacement_distance = f.displacement_distance_form()
-    for part in all_parts:
+    for part in non_panelized_parts:
         try:
             a.auto_parts(__title__, part,displacement_distance,multiple=True)
         except Exception:
             pass
+
+    g.highlight_unpanelized_underpanelized_parts(__title__)
 
 
 if __name__ == "__main__":

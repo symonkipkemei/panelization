@@ -445,16 +445,16 @@ def highlight_unpanelized_underpanelized_parts(__title__):
     # color codes - unpanelized
     graphics_settings_unpanelized = OverrideGraphicSettings()
     graphics_settings_unpanelized.SetSurfaceForegroundPatternId(solid_fill_id)
-    clr_bytes = [255, 99, 71]
-    color_unpanelized = Color(clr_bytes[0], clr_bytes[1], clr_bytes[2])
-    graphics_settings_unpanelized.SetSurfaceForegroundPatternColor(color_unpanelized)
+    clr_bytes_a = [255, 99, 71]
+    color_unpanelized_a = Color(clr_bytes_a[0], clr_bytes_a[1], clr_bytes_a[2])
+    graphics_settings_unpanelized.SetSurfaceForegroundPatternColor(color_unpanelized_a)
 
     # color codes - underpanelized
     graphics_settings_underpanelized = OverrideGraphicSettings()
     graphics_settings_underpanelized.SetSurfaceForegroundPatternId(solid_fill_id)
-    clr_bytes = [251, 191, 0]
-    color_underpanelized = Color(clr_bytes[0], clr_bytes[1], clr_bytes[2])
-    graphics_settings_underpanelized.SetSurfaceForegroundPatternColor(color_unpanelized)
+    clr_bytes_b = [251, 191, 0]
+    color_underpanelized_b = Color(clr_bytes_b[0], clr_bytes_b[1], clr_bytes_b[2])
+    graphics_settings_underpanelized.SetSurfaceForegroundPatternColor(color_underpanelized_b)
 
     with Transaction(doc, __title__) as t:
         t.Start()

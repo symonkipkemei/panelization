@@ -52,6 +52,9 @@ def main():
     except eh.VariableDistanceNotFoundError:
         forms.alert("The variable distance could not be established")
 
+    except Exception:
+        forms.alert("Error occurred.Could not panelize")
+
 
 if __name__ == "__main__":
     main()

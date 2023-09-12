@@ -83,7 +83,7 @@ def auto_place_reveal_v2(__title__, host_wall_id, lap_type_id, variable_distance
     """
     with Transaction(doc, __title__) as t:
         try:
-            t.Start("PlacingReveal")
+            t.Start("01. PlacingReveal")
             # get failure handling options
             options = t.GetFailureHandlingOptions()
             failureProcessor = eh.RevealWarningSwallower()
@@ -94,11 +94,9 @@ def auto_place_reveal_v2(__title__, host_wall_id, lap_type_id, variable_distance
             status = t.Commit()
 
             if status != TransactionStatus.Committed:
-                print ("could not continue")
+                pass
 
         except Exception as ex:
-            if t.GetStatus() == TransactionStatus.Started:
-                pass
             reveal = None
 
     return reveal
@@ -116,7 +114,11 @@ def auto_panel(__title__, host_wall_id, lap_type_id, reveal_indexes, side_of_wal
 
     try:
         with Transaction(doc, __title__) as t:
-            t.Start()
+            t.Start("03. Panelize parts")
+            options = t.GetFailureHandlingOptions()
+            failureProcessor = eh.RevealWarningSwallower()
+            options.SetFailuresPreprocessor(failureProcessor)
+            t.SetFailureHandlingOptions(options)
 
             for reveal_index in reveal_indexes:
                 wall_sweep = auto_reveal(host_wall_id, lap_type_id, reveal_index, side_of_wall)
@@ -126,7 +128,7 @@ def auto_panel(__title__, host_wall_id, lap_type_id, reveal_indexes, side_of_wal
         print ('The following error has occurred: {}'.format(e))
 
 
-def auto_parts(__title__, part, displacement_distance,switch_option, multiple=True):
+def auto_parts(__title__, part, displacement_distance, switch_option, multiple=True):
     """
     Identifies :
     1. the Parts ( exterior, interior or partition ) intuitively
@@ -144,14 +146,9 @@ def auto_parts(__title__, part, displacement_distance,switch_option, multiple=Tr
 
     # Test if the panel is divisible into two equal parts
     reveal_plane_coordinate_0 = g.get_reveal_coordinate_at_0(__title__, part)
-
     centre_index = g.get_part_centre_index(part, reveal_plane_coordinate_0)
-    """    test_centre_index = cc.check_centre_index(__title__, part, centre_index)
-    if not test_centre_index:
-        raise eh.CannotSplitPanelError"""
 
     # create left and right edge
-
     part_length = g.get_part_length(part)
     left_edge, right_edge = g.get_edge_index_v2(part_length, centre_index)
 
@@ -164,7 +161,6 @@ def auto_parts(__title__, part, displacement_distance,switch_option, multiple=Tr
     else:
         displacement = displacement_distance
         out_ranges = o.get_out_ranges(part, hosted_doors, hosted_windows, reveal_plane_coordinate_0, displacement)
-
 
     exterior = g.switch_directions(exterior, bool_option=switch_option)
 

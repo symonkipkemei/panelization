@@ -141,7 +141,11 @@ def delete_element(__title__, *args):
     :return: None
     """
     with Transaction(doc, __title__) as t:
-        t.Start()
+        t.Start("02. Delete reveals")
+        options = t.GetFailureHandlingOptions()
+        failureProcessor = eh.RevealWarningSwallower()
+        options.SetFailuresPreprocessor(failureProcessor)
+        t.SetFailureHandlingOptions(options)
         for element_id in args:
             doc.Delete(element_id)
         t.Commit()
@@ -308,6 +312,9 @@ def get_reveal_coordinate_at_0(__title__, part):
     variable_distance = 3
     while True:
         reveal_1 = a.auto_place_reveal_v2(__title__, host_wall_id, lap_type_id, variable_distance, side_of_wall)
+        if reveal_1 is None:
+            raise eh.VariableDistanceNotFoundError
+
         length_after_reveal = get_part_length(part)
         # print (variable_distance)
         if c.get_bounding_box_center(reveal_1) is not None:
@@ -326,6 +333,9 @@ def get_reveal_coordinate_at_0(__title__, part):
     move_distance = 0.166667  # 1/4", small distance to ensure part is cut
     reveal_2 = a.auto_place_reveal_v2(__title__, host_wall_id, lap_type_id, variable_distance + move_distance,
                                       side_of_wall)
+
+    if reveal_2 is None:
+        raise eh.VariableDistanceNotFoundError
 
     # reveal 2 plane coordinate
     reveal_xyz_coordinates_2 = c.get_bounding_box_center(reveal_2)

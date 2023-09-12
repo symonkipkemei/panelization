@@ -18,6 +18,7 @@ class CannotPanelizeError(Exception):
 class CannotSplitPanelError(Exception):
     pass
 
+
 #Delete reveal warning dialog boxes
 class RevealWarningSwallower(IFailuresPreprocessor):
     def PreprocessFailures(self, failuresAccessor):
@@ -31,25 +32,10 @@ class RevealWarningSwallower(IFailuresPreprocessor):
             # prevent Revit from showing Unenclosed room warnings
             if failID == BuiltInFailures.SweepFailures.CannotDrawSweep:
                 failuresAccessor.DeleteWarning(failure)
+            elif failID == BuiltInFailures.PartMakerMethodForWallFailures.CouldNotCreateWallPartDueToWallJoin:
+                failuresAccessor.DeleteWarning(failure)
             else:
-                failuresAccessor.DeleteWarning(failure)
-
-        return FailureProcessingResult.Continue
-
-
-# delete dialog box for : Wall part could not be properly adjusted for join condition.
-class JointConditionSwallower(IFailuresPreprocessor):
-    def PreprocessFailures(self, failuresAccessor):
-        # Inside event handler, get all warnings
-        failList = failuresAccessor.GetFailureMessages()
-
-        for failure in failList:
-            # check FailureDefinitionIds against ones that you want to dismiss
-            failID = failure.GetFailureDefinitionId()
-            # prevent Revit from showing Unenclosed room warnings
-            if failID == BuiltInFailures.PartMakerMethodForWallFailures.CouldNotCreateWallPartDueToWallJoin:
-                failuresAccessor.DeleteWarning(failure)
-
+                failuresAccessor.DeleteAllWarnings()
 
         return FailureProcessingResult.Continue
 

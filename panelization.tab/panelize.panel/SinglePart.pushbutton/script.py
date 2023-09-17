@@ -17,16 +17,12 @@ from Autodesk.Revit.DB import *
 from Autodesk.Revit.DB import Transaction, Element, ElementId, FilteredElementCollector
 from Autodesk.Revit.DB.Structure import StructuralType
 from Autodesk.Revit.UI.Selection import ObjectType
-
 from _create import _parts as g
 from _create import _transactions as a
 from _create import _errorhandler as eh
 from _create import _forms as f
-
 import clr
-
 clr.AddReference("System")
-
 from pyrevit import forms
 
 
@@ -55,8 +51,8 @@ def main():
     except eh.VariableDistanceNotFoundError:
         forms.alert("The variable distance could not be established")
 
-    except Exception:
-        forms.alert("Error occurred.Could not panelize")
+    #except Exception:
+        #forms.alert("Error occurred.Could not panelize")
 
 
 

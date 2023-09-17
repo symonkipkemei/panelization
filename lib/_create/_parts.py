@@ -156,6 +156,36 @@ def get_wall_sweep_parameters(layer_index, host_wall_type_id):
     return lap_type_id, side_of_wall, exterior
 
 
+def create_reveal(host_wall_id, lap_type_id, variable_distance, side_of_wall):
+    """ Creates a wall sweep
+    :param lap_type_id:Element id of the wall sweep type used
+    :param host_wall_id:host wall id
+    :param variable_distance: distance along the wall's path curve
+    :param side_of_wall: side of the wall to which the reveal is attached.
+    :return:  A wall sweep
+    """
+
+    # Get host wall
+    wall = doc.GetElement(host_wall_id)
+
+    # Get Wall Sweep type
+    wallSweepTypeId = lap_type_id
+
+    # Get wall sweep info
+    wallSweepType = WallSweepType.Reveal
+    wallSweepInfo = WallSweepInfo(wallSweepType, True)
+    wallSweepInfo.CutsWall = True
+    wallSweepInfo.IsCutByInserts = True
+    wallSweepInfo.Distance = variable_distance
+    wallSweepInfo.WallSide = side_of_wall
+    wallSweepInfo.DistanceMeasuredFrom = DistanceMeasuredFrom.Base
+
+    # create a wall sweep
+    wall_sweep = WallSweep.Create(wall, wallSweepTypeId, wallSweepInfo)
+
+    return wall_sweep
+
+
 def get_part_length(part):
     """
     Abstract the length of selected part
@@ -251,7 +281,7 @@ def get_reveal_indexes(left_edge, right_edge, out_ranges, exterior=True):
         if exterior:  # panelization is left to right, the left edge reduces towards the right edge
             left_edge -= panelling_distance
             # skipping the out range if there is a window
-            left_edge = o.skip_out_range(left_edge, out_ranges, exterior=True)
+            left_edge = o.check_out_range(left_edge, out_ranges, exterior=True)
             # remaining length established, will determine when panelization is complete ( < 4 script breaks)
             reveal_edge_width = 0.078125
             rem_length = left_edge - (right_edge - reveal_edge_width)
@@ -283,7 +313,7 @@ def get_reveal_indexes(left_edge, right_edge, out_ranges, exterior=True):
         else:
             right_edge += panelling_distance  # panelization is right to left, the right edge increases towards the left edge
             # skipping the out range if there is a window
-            right_edge = o.skip_out_range(right_edge, out_ranges, exterior=False)
+            right_edge = o.check_out_range(right_edge, out_ranges, exterior=False)
             rem_length = left_edge - right_edge
             reveal_indexes.append(right_edge)
             if rem_length < 4.0000:

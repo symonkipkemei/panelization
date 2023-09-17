@@ -22,7 +22,7 @@ import clr
 clr.AddReference("System")
 
 from _create import _transactions as a
-from _create import _parts as g
+from _create import _parts as p
 from _create import _errorhandler as eh
 from _create import  _forms as f
 from pyrevit import forms
@@ -41,7 +41,7 @@ active_level = doc.ActiveView.GenLevel
 
 
 def main():
-    parts = g.select_parts()
+    parts = p.select_parts()
     switch_option = f.switch_option()
     displacement_distance = f.displacement_distance_form()
     for part in parts:

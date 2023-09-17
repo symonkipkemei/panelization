@@ -18,7 +18,6 @@ from _create import _parts as p
 from _create import _coordinate as c
 from _create import _openings as o
 from _create import _errorhandler as e
-from _create import _checks as cc
 
 from pyrevit import forms
 from pyrevit.forms import WPFWindow

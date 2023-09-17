@@ -16,7 +16,7 @@ from _create import _transactions as a
 from _create import _test as t
 from _create import _parts as g
 from _create import _coordinate as c
-from _create import _checks as cc
+
 
 from pyrevit import forms
 

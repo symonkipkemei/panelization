@@ -12,7 +12,7 @@ import clr
 
 clr.AddReference("System")
 
-from _create import _auto as a
+from _create import _transactions as a
 from _create import _test as tt
 from _create import _coordinate as c
 from _create import _openings as o
@@ -25,13 +25,13 @@ doc = __revit__.ActiveUIDocument.Document  # obj used to create new instances of
 uidoc = __revit__.ActiveUIDocument  # obj that represent the current active project
 
 rvt_year = int(app.VersionNumber)
-# create
+
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> VIEWS
 active_view = doc.ActiveView
 active_level = doc.ActiveView.GenLevel
 
 
-# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ATOMIC FUNCTIONS
-
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> SELECT FUNCTIONS
 
 def select_all_parts():
     """
@@ -52,17 +52,13 @@ def select_part():
     reference = uidoc.Selection.PickObject(ObjectType.Element)
     part = uidoc.Document.GetElement(reference)
 
-    if str(type(part)) == "<type 'Part'>":
-        return part
-    else:
-        raise eh.CannotPanelizeError
+    return part
 
 
 def select_parts():
-    """Selects parts from the uidoc
-    :return: returns a list of parts
+    """Selects multiple/single part from the active project
+    :return: returns a collection of parts
     """
-
     # select part element
     references = uidoc.Selection.PickObjects(ObjectType.Element)
 
@@ -74,6 +70,9 @@ def select_parts():
     return parts
 
 
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> GET ELEMENT ID FUNCTIONS
+
+
 def get_host_wall_id(part):
     """
     Retrieves the host wall id, when a Part is selected
@@ -81,16 +80,16 @@ def get_host_wall_id(part):
     :return: host_wall_id
     """
     linkedElementIdCollection = part.GetSourceElementIds()
-    host_wall_id = linkedElementIdCollection[0].HostElementId  # pick first linkedelement in collection
+    host_wall_id = linkedElementIdCollection[0].HostElementId  # pick first linked element in collection
 
     return host_wall_id
 
 
 def get_host_wall_type_id(host_wall_id):
     """
-    Abstract the type of the wall by retrieving the wall type id
-    :param host_wall_id: id of the wall
-    :return: id of the wall type
+    Abstract the type of the wall i.e BamCore 9 3/4" Seperate I-E
+    :param host_wall_id: host wall id
+    :return: host wall type id
     """
     host_wall = doc.GetElement(host_wall_id)
     type_id = host_wall.GetTypeId()
@@ -98,7 +97,25 @@ def get_host_wall_type_id(host_wall_id):
     return type_id
 
 
-def get_wallsweep_parameters(layer_index, host_wall_type_id):
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> GET PARAMETERS FUNCTIONS
+
+
+def get_layer_index(part):
+    """
+    Abstract the layer index of a part if
+    layer Index 1- Exterior face
+    layer Index 2 - internal partition walls ( only applies for Bamcore Int Wall Type)
+    layer Index 3- Interior face
+
+    :param part: Part to be abstracted
+    :return: The layer index
+    """
+    # abstract the layer index of part
+    layer_index = int(part.get_Parameter(BuiltInParameter.DPART_LAYER_INDEX).AsString())
+    return layer_index
+
+
+def get_wall_sweep_parameters(layer_index, host_wall_type_id):
     """Abstract parameters based on the layer index of the part"""
 
     left_lap_id = ElementId(352818)
@@ -109,9 +126,13 @@ def get_wallsweep_parameters(layer_index, host_wall_type_id):
     lap_type_id = right_lap_id
     exterior = True
 
+    # collection of walls with interior and exterior parts
     I_E_wall_types = [ElementId(384173), ElementId(391917), ElementId(391949), ElementId(391949), ElementId(391971)]
+
+    # collection of walls with interior parts
     I_wall_types = [ElementId(400084)]
 
+    # if wall types have both  the interior and exterior parts
     if host_wall_type_id not in I_wall_types:
         if layer_index == 1:  # exterior face
             side_of_wall = WallSide.Exterior
@@ -125,6 +146,7 @@ def get_wallsweep_parameters(layer_index, host_wall_type_id):
         else:
             exterior = None
 
+    # if wall types has interior part only
     elif host_wall_type_id in I_wall_types:
         if layer_index == 2:  # interior face of partition walls, ignore layer-index 1 (the core)
             side_of_wall = WallSide.Interior
@@ -134,38 +156,75 @@ def get_wallsweep_parameters(layer_index, host_wall_type_id):
     return lap_type_id, side_of_wall, exterior
 
 
-def delete_element(__title__, *args):
+def get_part_length(part):
     """
-    Delete a single/many element in revit
-    :param __title__: tool title
-    :return: None
+    Abstract the length of selected part
+    :return: length
     """
-    with Transaction(doc, __title__) as t:
-        t.Start("02. Delete reveals")
-        options = t.GetFailureHandlingOptions()
-        failureProcessor = eh.RevealWarningSwallower()
-        options.SetFailuresPreprocessor(failureProcessor)
-        t.SetFailureHandlingOptions(options)
-        for element_id in args:
-            doc.Delete(element_id)
-        t.Commit()
+    part_length = part.get_Parameter(BuiltInParameter.DPART_LENGTH_COMPUTED).AsDouble()
+    return part_length
 
 
-def get_reveal_indexes_v2(left_edge, right_edge, out_ranges, exterior=True):
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> GET INDEX FUNCTIONS
+
+def get_part_centre_index(part, reveal_plane_coordinate_0):
     """
-    Retrieve the reveal indexes, taking into consideration the window out-ranges
+    Determine the centre index of the panel
+    :param part: Part to be panelized
+    :param reveal_plane_coordinate_0: coordinates of reveal at 0
+    :
+    :return: part centre index
+    """
+    # project parameters
+    host_wall_id = get_host_wall_id(part)
+    x_axis_plane = c.determine_x_plane(host_wall_id)
+
+    # determine the coordinates of the centre of the part
+    part_centre_xyz_coordinates = c.get_bounding_box_center(part)
+    part_centre_coordinate = float(c.get_plane_coordinate(part_centre_xyz_coordinates, x_axis_plane))
+
+    # determine the difference between two to abstract the centre-index
+    if reveal_plane_coordinate_0 > part_centre_coordinate:
+        centre_index = (reveal_plane_coordinate_0 - part_centre_coordinate)
+    else:
+        centre_index = (part_centre_coordinate - reveal_plane_coordinate_0)
+
+    return centre_index
+
+
+def get_part_edge_index(part_length, part_centre_index):
+    """
+    Determine the left or the right edge
+    :param part_length: Length of part
+    :param part_centre_index: Index of part centre
+    :return: left_edge, right_edge
+    """
+    half_length = part_length / 2
+    edge_1 = part_centre_index + half_length
+    edge_2 = part_centre_index - half_length
+
+    edges = sorted([edge_1, edge_2])
+
+    right_edge = edges[0]  # the smallest value becomes the right-edge,
+    # the distance 0 begins at the right end of the wall's path curve
+    left_edge = edges[1]  # the largest value becomes the left edge
+
+    return left_edge, right_edge
+
+
+def get_reveal_indexes(left_edge, right_edge, out_ranges, exterior=True):
+    """
+    Retrieve the reveal indexes, taking into consideration the openings out-ranges
     :param out_ranges: The ranges where the reveals should not be positioned closed to fenestration edges
     :param left_edge: The left edge of the part ( from exterior)
     :param right_edge: The right edge of the part ( from exterior)
     :param exterior: if exterior face, the panel position starts from left to right,
      if not the panel position starts from right to left
-    :return: the indexes of the reveal position
+    :return: collection of indexes of the reveal position
     """
 
+    # The panelling distance (3' 11 1/8" Distance required to generate a panel of 4')
     panelling_distance = 3.927083
-
-    # The panelling distance (Distance required to generate a panel of 4')
-    # from one reveal to another, varies based on the type of reveal
 
     if rvt_year >= 2023:  # template provided uses reveal width 15/16"
         panelling_distance = 3.927083 - 0.005208  # 3' 11 1/8" - 1/16"
@@ -265,140 +324,14 @@ def get_single_panel_reveal_indexes(left_edge, right_edge, exterior=True):
     return reveal_indexes
 
 
-def get_layer_index(part):
-    """
-    Abstract the layer index of a part if
-    layer Index 1- Exterior face
-    layer Index 2 - internal partition walls ( only applies for Bamcore Int Wall Type)
-    layer Index 3- Interior face
-
-    :param part: Part to be abstracted
-    :return: The layer index
-    """
-    # abstract the layer index of part
-    layer_index = int(part.get_Parameter(BuiltInParameter.DPART_LAYER_INDEX).AsString())
-    return layer_index
-
-
-def get_part_length(part):
-    """
-    Abstract the length of selected part
-    :return: length
-    """
-    part_length = part.get_Parameter(BuiltInParameter.DPART_LENGTH_COMPUTED).AsDouble()
-    return part_length
-
-
-def get_reveal_coordinate_at_0(__title__, part):
-    """
-    Get the coordinates of the reveal at distance 0
-    :param __title__: Tool title
-    :param part: Part to be panelized
-
-    """
-    host_wall_id = get_host_wall_id(part)
-    host_wall_type_id = get_host_wall_type_id(host_wall_id)
-    layer_index = get_layer_index(part)
-    lap_type_id, side_of_wall, exterior = get_wallsweep_parameters(layer_index, host_wall_type_id)
-    x_axis_plane = c.determine_x_plane(host_wall_id)
-
-    # establish the length of part
-    length_before_reveal = get_part_length(part)
-
-    # determine the reveal that cuts through the part, the script will continue until the correct reveal is found,
-    # a reveal that does not cut through the part will not give us it's coordinates
-
-    # reveal 1 plane coordinate
-    variable_distance = 3
-    while True:
-        reveal_1 = a.auto_place_reveal_v2(__title__, host_wall_id, lap_type_id, variable_distance, side_of_wall)
-        if reveal_1 is None:
-            raise eh.VariableDistanceNotFoundError
-
-        length_after_reveal = get_part_length(part)
-        # print (variable_distance)
-        if c.get_bounding_box_center(reveal_1) is not None:
-            break
-        elif length_before_reveal != length_after_reveal:
-            break
-        delete_element(__title__, reveal_1.Id)
-        variable_distance += 3
-        if variable_distance > 100:
-            raise eh.VariableDistanceNotFoundError
-
-    reveal_xyz_coordinates_1 = c.get_bounding_box_center(reveal_1)
-    reveal_plane_coordinate_1 = float(c.get_plane_coordinate(reveal_xyz_coordinates_1, x_axis_plane))
-
-    # create snd wall sweep, this will help establish the reveal at 0
-    move_distance = 0.166667  # 1/4", small distance to ensure part is cut
-    reveal_2 = a.auto_place_reveal_v2(__title__, host_wall_id, lap_type_id, variable_distance + move_distance,
-                                      side_of_wall)
-
-    if reveal_2 is None:
-        raise eh.VariableDistanceNotFoundError
-
-    # reveal 2 plane coordinate
-    reveal_xyz_coordinates_2 = c.get_bounding_box_center(reveal_2)
-    reveal_plane_coordinate_2 = float(c.get_plane_coordinate(reveal_xyz_coordinates_2, x_axis_plane))
-
-    # reveal plane coordinates at 0
-    if reveal_plane_coordinate_2 < reveal_plane_coordinate_1:
-        reveal_plane_coordinate_0 = reveal_plane_coordinate_1 + variable_distance
-    else:
-        reveal_plane_coordinate_0 = reveal_plane_coordinate_1 - variable_distance
-
-    # delete the reveal after abstracting the coordinate at o
-    delete_element(__title__, reveal_1.Id, reveal_2.Id)
-
-    return reveal_plane_coordinate_0
-
-
-def get_part_centre_index(part, reveal_plane_coordinate_0):
-    """
-    Determine the centre index of the panel
-    :param part: Part to be panelized
-    :param reveal_plane_coordinate_0: coordinates of reveal at 0
-    :
-    :return: part centre index
-    """
-    # project parameters
-    host_wall_id = get_host_wall_id(part)
-    x_axis_plane = c.determine_x_plane(host_wall_id)
-
-    # determine the coordinates of the centre of the part
-    part_centre_xyz_coordinates = c.get_bounding_box_center(part)
-    part_centre_coordinate = float(c.get_plane_coordinate(part_centre_xyz_coordinates, x_axis_plane))
-
-    # determine the difference between two to abstract the centre-index
-    if reveal_plane_coordinate_0 > part_centre_coordinate:
-        centre_index = (reveal_plane_coordinate_0 - part_centre_coordinate)
-    else:
-        centre_index = (part_centre_coordinate - reveal_plane_coordinate_0)
-
-    return centre_index
-
-
-def get_edge_index_v2(length, centre_index):
-    """
-    Determine the left or the right edge
-    :param length:
-    :param centre_index:
-    :return: left_edge, right_edge
-    """
-    half_length = length / 2
-    edge_1 = centre_index + half_length
-    edge_2 = centre_index - half_length
-
-    edges = sorted([edge_1, edge_2])
-
-    right_edge = edges[0]  # the smallest value becomes the right-edge,
-    # the distance 0 begins at the right end of the wall's path curve
-    left_edge = edges[1]  # the largest value becomes the left edge
-
-    return left_edge, right_edge
-
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> SORT FUNCTIONS
 
 def sort_parts_by_side(parts):
+    """
+    Sorts parts based on the side of wall
+    :param parts: Collection of parts
+    :return: collection of exterior parts, interior parts
+    """
     exterior_parts = []
     interior_parts = []
     core_parts = []
@@ -422,11 +355,14 @@ def sort_parts_by_side(parts):
 
 def sort_parts_by_length(parts):
     """
-    sort parts based on it's length, to underpanelized, panalized and unpanalized
+    sort parts based on it's length
+    :param parts: Collection of parts
+    :return: collections of underpanelized, panalized and unpanalized parts
     """
     underpanelized = []
     panalized = []
     unpanalized = []
+
     minimum_panel = 2.0
 
     for part in parts:
@@ -442,63 +378,36 @@ def sort_parts_by_length(parts):
     return underpanelized, panalized, unpanalized
 
 
-def highlight_unpanelized_underpanelized_parts(__title__):
-    """Color code unapnelized parts for ease of identification"""
-    # select all parts
-    parts = select_all_parts()
-    exterior_parts, interior_parts = sort_parts_by_side(parts)
-    filtered_parts = exterior_parts + interior_parts
-    underpanalized, panelized, unpanelized = sort_parts_by_length(filtered_parts)
+def sort_parts_by_orthogonal(parts):
+    """
+    filters out non-orthogonal parts
+    :param parts: Parts to be panelized
+    :return: orthogonal parts
+    """
+    orthogonal_parts = []
+    non_orthogonal_parts = []
+    for part in parts:
+        host_wall_id = p.get_host_wall_id(part)
+        host_wall = doc.GetElement(host_wall_id)
+        sketch = host_wall.SketchId  # if sketchId is not -1, then the wall has been edited
 
-    solid_fill_id = ElementId(20)
-
-    # color codes - unpanelized
-    graphics_settings_unpanelized = OverrideGraphicSettings()
-    graphics_settings_unpanelized.SetSurfaceForegroundPatternId(solid_fill_id)
-    clr_bytes_a = [255, 99, 71]
-    color_unpanelized_a = Color(clr_bytes_a[0], clr_bytes_a[1], clr_bytes_a[2])
-    graphics_settings_unpanelized.SetSurfaceForegroundPatternColor(color_unpanelized_a)
-
-    # color codes - underpanelized
-    graphics_settings_underpanelized = OverrideGraphicSettings()
-    graphics_settings_underpanelized.SetSurfaceForegroundPatternId(solid_fill_id)
-    clr_bytes_b = [251, 191, 0]
-    color_underpanelized_b = Color(clr_bytes_b[0], clr_bytes_b[1], clr_bytes_b[2])
-    graphics_settings_underpanelized.SetSurfaceForegroundPatternColor(color_underpanelized_b)
-
-    with Transaction(doc, __title__) as t:
-        t.Start()
-        if len(unpanelized) != 0:
-            for part in unpanelized:
-                active_view.SetElementOverrides(part.Id, graphics_settings_unpanelized)
-        if len(underpanalized) != 0:
-            for part in underpanalized:
-                active_view.SetElementOverrides(part.Id, graphics_settings_underpanelized)
-
-        t.Commit()
-
-    return graphics_settings_unpanelized, graphics_settings_underpanelized
+        if sketch == ElementId(-1):
+            orthogonal_parts.append(part)
+        else:
+            non_orthogonal_parts.append(part)
+    return orthogonal_parts
 
 
-def remove_graphics(__title__):
-    parts = select_all_parts()
-    exterior_parts, interior_parts = sort_parts_by_side(parts)
-    filtered_parts = exterior_parts + interior_parts
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> SWITCH FUNCTIONS
 
-    graphics_settings = OverrideGraphicSettings()
-    graphics_settings.Dispose()
-
-    with Transaction(doc, __title__) as t:
-        t.Start()
-
-        active_view.SetElementOverrides(ElementId(571271), graphics_settings)
-
-        t.Commit()
-
-
-
-def switch_directions(exterior, bool_option=False):
-    if bool_option:
+def switch_directions(exterior, switch_direction=False):
+    """
+    Switch direction of panelization from left to right and vice versa
+    :param exterior: Bool that determines if part is exterior or not
+    :param switch_direction:  Bool if true switches the exterior bool
+    :return: exterior bool
+    """
+    if switch_direction:
         if exterior == True:
             exterior = False
         else:

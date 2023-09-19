@@ -51,8 +51,11 @@ def main():
     except eh.VariableDistanceNotFoundError:
         forms.alert("The variable distance could not be established")
 
-    #except Exception:
-        #forms.alert("Error occurred.Could not panelize")
+    except eh.TransactionError:
+        forms.alert("Transaction Error occurred")
+
+    except Exception:
+        forms.alert("Error occurred.Could not panelize selected Part.")
 
 
 

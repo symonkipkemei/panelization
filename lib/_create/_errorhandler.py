@@ -55,3 +55,7 @@ class RevealNotSelectedError(Exception):
 # catch elements that are Null in value
 class NoneError(Exception):
     pass
+
+# catches walls that are non-othogonal
+class TransactionError(Exception):
+    pass

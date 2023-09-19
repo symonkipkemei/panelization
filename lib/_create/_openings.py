@@ -17,7 +17,6 @@ from _create import _test as t
 from _create import _parts as g
 from _create import _coordinate as c
 
-
 from pyrevit import forms
 
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> VARIABLES
@@ -31,6 +30,25 @@ rvt_year = int(app.VersionNumber)
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> VIEWS
 active_view = doc.ActiveView
 active_level = doc.ActiveView.GenLevel
+
+
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> GET WIDTH
+def get_fenestration_width(fenestration_id):
+    """
+    Establish the width of the window
+    :param fenestration_id: window/door id
+    :return: the width
+    """
+    # establish the width of the window
+    fenestration = doc.GetElement(fenestration_id)
+    fenestration_type = fenestration.Symbol
+    width = fenestration_type.get_Parameter(BuiltInParameter.DOOR_WIDTH).AsDouble()
+
+    # interchangeably the width can be 0 but rough width has dimensions
+    if width == 0:
+        width = fenestration_type.get_Parameter(BuiltInParameter.FAMILY_ROUGH_WIDTH_PARAM).AsDouble()
+
+    return width
 
 
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> GET COORDINATES
@@ -130,7 +148,7 @@ def get_fenestration_out_range(fenestration_left_index, fenestration_right_index
 
     # window width
     fenestration_width = fenestration_left_index - fenestration_right_index
-    displacement = cc.check_displacement_distance(displacement, fenestration_width)
+    displacement = check_displacement_distance(displacement, fenestration_width)
 
     # window left edge
     left_box_range_1 = fenestration_left_index - displacement

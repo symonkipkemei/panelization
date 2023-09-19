@@ -45,6 +45,7 @@ active_level = doc.ActiveView.GenLevel
 
 
 def get_parts_data(filtered_parts):
+    """Abstract parts data : height,length, thickness, volume, base level and area"""
     parts_data = {}
 
     for part in filtered_parts:
@@ -66,6 +67,11 @@ def get_parts_data(filtered_parts):
 
 
 def get_parts_type_data(parts_data):
+    """Aggregate parts data of similar length and height
+    :param parts_data:
+    :return:
+    """
+
     data = {}
     for part_data in parts_data.values():  # the default type
         default_part_type = part_data[0]
@@ -82,6 +88,7 @@ def get_parts_type_data(parts_data):
 
 
 def get_summary_data(parts_data, parts_type_data, cost_per_sf):
+    """Sum up parts data into total panels, area and cost"""
     final_data = []
     sum_panels = 0
     sum_area = 0
@@ -108,6 +115,12 @@ def get_summary_data(parts_data, parts_type_data, cost_per_sf):
 
 
 def user_filters_part_type(exterior_parts,interior_parts):
+    """
+    Alllow user to select which parts to be filtered.
+    :param exterior_parts: interior parts
+    :param interior_parts: exterior parts
+    :return: selected parts , user choice
+    """
     # user selects which parts for take off
 
     ops = ['External Parts', 'Internal Parts', 'External and Internal Parts']
@@ -158,7 +171,7 @@ def main():
             forms.alert("Highlighted parts (red) have not been panelized")
 
         else:
-            forms.alert("Congratualtions! All parts have been panelized")
+            forms.alert("CongratuLations! All parts have been panelized")
 
 
     else:

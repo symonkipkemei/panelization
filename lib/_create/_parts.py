@@ -371,7 +371,7 @@ def sort_parts_by_side(parts):
         host_wall_id = get_host_wall_id(part)
         host_wall_type_id = get_host_wall_type_id(host_wall_id)
         layer_index = get_layer_index(part)
-        lap_type_id, side_of_wall, exterior = get_wallsweep_parameters(layer_index, host_wall_type_id)
+        lap_type_id, side_of_wall, exterior = get_wall_sweep_parameters(layer_index, host_wall_type_id)
 
         if exterior == True:
             exterior_parts.append(part)
@@ -446,3 +446,47 @@ def switch_directions(exterior, switch_direction=False):
         exterior = exterior
 
     return exterior
+
+
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> HIGHLIGHT FUNCTIONS
+
+def highlight_unpanelized_underpanelized_parts(__title__):
+    """Color code unpanelized parts and underpanleized parts for ease of identification
+    :param __title__:
+    :return: graphics_settings_unpanelized, graphics_settings_underpanelized
+    """
+
+    # select all parts
+    parts = select_all_parts()
+    exterior_parts, interior_parts = sort_parts_by_side(parts)
+    filtered_parts = exterior_parts + interior_parts
+    underpanalized, panelized, unpanelized = sort_parts_by_length(filtered_parts)
+
+    solid_fill_id = ElementId(20)
+
+    # color codes - unpanelized
+    graphics_settings_unpanelized = OverrideGraphicSettings()
+    graphics_settings_unpanelized.SetSurfaceForegroundPatternId(solid_fill_id)
+    clr_bytes_a = [255, 99, 71]
+    color_unpanelized_a = Color(clr_bytes_a[0], clr_bytes_a[1], clr_bytes_a[2])
+    graphics_settings_unpanelized.SetSurfaceForegroundPatternColor(color_unpanelized_a)
+
+    # color codes - underpanelized
+    graphics_settings_underpanelized = OverrideGraphicSettings()
+    graphics_settings_underpanelized.SetSurfaceForegroundPatternId(solid_fill_id)
+    clr_bytes_b = [251, 191, 0]
+    color_underpanelized_b = Color(clr_bytes_b[0], clr_bytes_b[1], clr_bytes_b[2])
+    graphics_settings_underpanelized.SetSurfaceForegroundPatternColor(color_underpanelized_b)
+
+    with Transaction(doc, __title__) as t:
+        t.Start()
+        if len(unpanelized) != 0:
+            for part in unpanelized:
+                active_view.SetElementOverrides(part.Id, graphics_settings_unpanelized)
+        if len(underpanalized) != 0:
+            for part in underpanalized:
+                active_view.SetElementOverrides(part.Id, graphics_settings_underpanelized)
+
+        t.Commit()
+
+    return graphics_settings_unpanelized, graphics_settings_underpanelized

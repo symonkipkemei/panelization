@@ -57,6 +57,10 @@ class RevealSelectionFilter(ISelectionFilter):
 
 # select a reveal
 def select_reveal():
+    """
+    Selects a reveal
+    :return:
+    """
     reveal_filter = RevealSelectionFilter()
     reference = uidoc.Selection.PickObject(ObjectType.Element, reveal_filter)
     reveal = uidoc.Document.GetElement(reference)
@@ -70,12 +74,22 @@ def select_reveal():
 
 
 def get_wall_side(reveal):
+    """
+    Determine the wall side of the reveal
+    :param reveal: reveal
+    :return: wall side
+    """
     wall_sweep_info = reveal.GetWallSweepInfo()
     wall_side = wall_sweep_info.WallSide
     return wall_side
 
 
 def get_host_wall_id(reveal):
+    """
+    Abstract the host wall id of a  selected reveal
+    :param reveal: Reveal
+    :return: host wall Element Id
+    """
     host_ids = reveal.GetHostIds()
     host_id = host_ids[0]
 
@@ -86,6 +100,10 @@ def get_host_wall_id(reveal):
 
 
 def select_all_reveals():
+    """
+    Select all reveals in a project
+    :return:
+    """
     all_reveals = FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_Reveals). \
         WhereElementIsNotElementType().ToElements()
 
@@ -93,6 +111,13 @@ def select_all_reveals():
 
 
 def get_filtered_reveals(reference_host_id, reference_wall_side, all_reveals):
+    """
+    Filter reveals based on the host wall and the wall side
+    :param reference_host_id:
+    :param reference_wall_side:
+    :param all_reveals:
+    :return:
+    """
     filtered_reveals = []
     for reveal in all_reveals:
         wall_side = get_wall_side(reveal)
@@ -105,6 +130,7 @@ def get_filtered_reveals(reference_host_id, reference_wall_side, all_reveals):
 
 
 def display_selected_reveals(filtered_reveals):
+    """Display all selected reveals"""
     uidoc.Selection.SetElementIds(filtered_reveals)
 
 

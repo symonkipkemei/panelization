@@ -41,9 +41,9 @@ def main():
         lap_type_id, side_of_wall, exterior = p.get_wall_sweep_parameters(layer_index, host_wall_type_id)
 
         reveal_plane_coordinate_0 = t.get_reveal_coordinate_at_0(__title__, part)
-        distance = p.get_part_centre_index(part, reveal_plane_coordinate_0)
+        centre_index = p.get_part_centre_index(part, reveal_plane_coordinate_0)
 
-        t.auto_place_reveal(__title__, host_wall_id, lap_type_id, distance, side_of_wall)
+        t.auto_place_reveal(__title__, host_wall_id, lap_type_id, centre_index, side_of_wall)
 
     except eh.VariableDistanceNotFoundError:
         forms.alert("The variable distance could not be established")

@@ -53,6 +53,9 @@ def main():
             forms.alert("Centre Index could not be established")
         except eh.VariableDistanceNotFoundError:
             forms.alert("The variable distance could not be established")
+        except eh.TransactionError:
+            forms.alert("Transaction Error occurred")
+
         except Exception:
             pass
 

@@ -8,6 +8,7 @@ from Autodesk.Revit.DB import Transaction, Element, ElementId, FilteredElementCo
 from Autodesk.Revit.DB.Structure import StructuralType
 from Autodesk.Revit.UI.Selection import ObjectType
 import clr
+
 clr.AddReference("System")
 from _create import _parts as p
 from _create import _test as tt
@@ -39,28 +40,23 @@ def auto_place_reveal(__title__, host_wall_id, lap_type_id, variable_distance, s
     :return: A wall sweep
     """
     with Transaction(doc, __title__) as t:
-        try:
-            t.Start("01. PlacingReveal")
-            # Provides access to option to control how failures should be handled by end of transaction.
-            options = t.GetFailureHandlingOptions()
+        t.Start("01. PlacingReveal")
+        # Provides access to option to control how failures should be handled by end of transaction.
+        options = t.GetFailureHandlingOptions()
 
-            # deletes warnings captured
-            failureProcessor = eh.WarningSwallower()
+        # deletes warnings captured
+        failureProcessor = eh.WarningSwallower()
 
-            # sets how failures should be handled during transaction
-            options.SetFailuresPreprocessor(failureProcessor)
-            t.SetFailureHandlingOptions(options)
+        # sets how failures should be handled during transaction
+        options.SetFailuresPreprocessor(failureProcessor)
+        t.SetFailureHandlingOptions(options)
 
-            reveal = p.create_reveal(host_wall_id, lap_type_id, variable_distance, side_of_wall)
-            status = t.Commit()
+        reveal = p.create_reveal(host_wall_id, lap_type_id, variable_distance, side_of_wall)
 
-            if status != TransactionStatus.Committed:
-                # if transaction has not been committed, this would result to an error.
-                print("The transaction has not been committed")
+        status = t.Commit()
 
-        except Exception as e:
-            print ('The following error has occurred on Transaction 03. Panelize parts : {}'.format(e))
-            reveal = None
+        if status != TransactionStatus.Committed:
+            raise eh.RevealNotCreatedError
 
     return reveal
 
@@ -72,34 +68,32 @@ def get_reveal_coordinate_at_0(__title__, part):
     :param part: Part to be panelized
 
     """
+
+    # project parameters
     host_wall_id = p.get_host_wall_id(part)
     host_wall_type_id = p.get_host_wall_type_id(host_wall_id)
     layer_index = p.get_layer_index(part)
     lap_type_id, side_of_wall, exterior = p.get_wall_sweep_parameters(layer_index, host_wall_type_id)
     x_axis_plane = c.determine_x_plane(host_wall_id)
 
-    # establish the length of part
-    length_before_reveal = p.get_part_length(part)
+    # set variable distance at 3, most parts are cut with reveals at a distance from the path curve origin,0 .
+    # Thus, coordinates of the reveal can be established
 
-    # determine the reveal that cuts through the part, the script will continue until the correct reveal is found,
-    # a reveal that does not cut through the part will not give us it's coordinates
-
-    # reveal 1 plane coordinate
     variable_distance = 3
     while True:
         reveal_1 = auto_place_reveal(__title__, host_wall_id, lap_type_id, variable_distance, side_of_wall)
-        if reveal_1 is None:
-            raise eh.VariableDistanceNotFoundError
 
-        length_after_reveal = p.get_part_length(part)
-        # print (variable_distance)
         if c.get_bounding_box_center(reveal_1) is not None:
-            break
-        elif length_before_reveal != length_after_reveal:
-            break
+            break  # script breaks once coordinates are established
+
+        # if the coordinates are not established, the script deletes the reveal and before looping to
+        # the next at an adjusted distance
         delete_element(__title__, reveal_1.Id)
+
         variable_distance += 3
+
         if variable_distance > 100:
+            # the script has to break , the reveal coordinates could not be established.
             raise eh.VariableDistanceNotFoundError
 
     reveal_xyz_coordinates_1 = c.get_bounding_box_center(reveal_1)
@@ -108,10 +102,7 @@ def get_reveal_coordinate_at_0(__title__, part):
     # create snd wall sweep, this will help establish the reveal at 0
     move_distance = 0.166667  # 1/4", small distance to ensure part is cut
     reveal_2 = auto_place_reveal(__title__, host_wall_id, lap_type_id, variable_distance + move_distance,
-                                   side_of_wall)
-
-    if reveal_2 is None:
-        raise eh.VariableDistanceNotFoundError
+                                 side_of_wall)
 
     # reveal 2 plane coordinate
     reveal_xyz_coordinates_2 = c.get_bounding_box_center(reveal_2)
@@ -143,29 +134,26 @@ def auto_panel(__title__, host_wall_id, lap_type_id, reveal_indexes, side_of_wal
     :return: None
     """
 
-    try:
-        with Transaction(doc, __title__) as t:
-            t.Start("03. Panelize parts")
-            # Provides access to option to control how failures should be handled by end of transaction.
-            options = t.GetFailureHandlingOptions()
+    with Transaction(doc, __title__) as t:
+        t.Start("03. Panelize parts")
+        # Provides access to option to control how failures should be handled by end of transaction.
+        options = t.GetFailureHandlingOptions()
 
-            # deletes warnings captured
-            failureProcessor = eh.WarningSwallower()
+        # deletes warnings captured
+        failureProcessor = eh.WarningSwallower()
 
-            # sets how failures should be handled during transaction
-            options.SetFailuresPreprocessor(failureProcessor)
-            t.SetFailureHandlingOptions(options)
+        # sets how failures should be handled during transaction
+        options.SetFailuresPreprocessor(failureProcessor)
+        t.SetFailureHandlingOptions(options)
 
-            for reveal_index in reveal_indexes:
-                wall_sweep = p.create_reveal(host_wall_id, lap_type_id, reveal_index, side_of_wall)
-            status = t.Commit()
+        for reveal_index in reveal_indexes:
+            wall_sweep = p.create_reveal(host_wall_id, lap_type_id, reveal_index, side_of_wall)
+        status = t.Commit()
 
-            if status != TransactionStatus.Committed:
-                # if transaction has not been committed, this would result to an error
-                print("The transaction has not been committed")
-
-    except Exception as e:
-        print ('The following error has occurred on Transaction 03. Panelize parts : {}'.format(e))
+        if status != TransactionStatus.Committed:
+            # if transaction has not been committed.Raise an error, the cause is that the centre index for
+            # the part could not be established correctly generating a wrong set of reveal indexes outside the panel
+            raise eh.CentreIndexError
 
 
 def auto_parts(__title__, part, displacement_distance, switch_option, multiple=True):
@@ -233,13 +221,18 @@ def delete_element(__title__, *args):
     """
     with Transaction(doc, __title__) as t:
         t.Start("02. Delete reveals")
+
         options = t.GetFailureHandlingOptions()
         failureProcessor = eh.WarningSwallower()
         options.SetFailuresPreprocessor(failureProcessor)
         t.SetFailureHandlingOptions(options)
         for element_id in args:
             doc.Delete(element_id)
-        t.Commit()
+        status = t.Commit()
+
+        if status != TransactionStatus.Committed:
+            # if transaction has not been rollback. Could not therefore delete elements
+            raise eh.DeleteElementsError
 
 
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> GRAPHICS TRANSACTIONS

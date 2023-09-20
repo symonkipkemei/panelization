@@ -151,7 +151,7 @@ def main():
     selected_parts = underpanalized + panelized
 
     if len(selected_parts) != 0:
-        cost_per_sf = float(f.single_digit_value())
+        cost_per_sf = float(f.form_estimated_cost())
 
         # filter to parts that have been panelized
         parts_data = get_parts_data(selected_parts)
@@ -164,7 +164,7 @@ def main():
                   "TOTAL AREA(SF)",
                   "COST PER SF (USD)", " COST(USD)"]
 
-        f.display_form(final_data, header, "Parts Material Takeoff" + "-" + user_choice)
+        f.form_display_table(final_data, header, "Parts Material Takeoff" + "-" + user_choice)
 
         if len(unpanalized) != 0:
             g.highlight_unpanelized_underpanelized_parts(__title__)

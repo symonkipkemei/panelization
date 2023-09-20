@@ -14,6 +14,7 @@ clr.AddReference("System")
 
 from _create import _transactions as a
 from _create import _test as t
+from _create import _errorhandler as eh
 
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> VARIABLES
 
@@ -53,7 +54,7 @@ def determine_x_plane(wall_id):
 
     else:
         # the wall curve is neither on x or y axis
-        x_axis = None
+        raise eh.XYAxisPlaneNotEstablishedError
 
     return x_axis
 

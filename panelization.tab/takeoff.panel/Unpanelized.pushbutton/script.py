@@ -92,7 +92,7 @@ def main():
         # display panels data
         header = ["COUNT", "PART ID", "HEIGHT(F)", "LENGTH(F)", "BASE LEVEL"]
 
-        f.display_form(parts_data, header, "Unpanelized parts", last_line_color='color:blue;')
+        f.form_display_table(parts_data, header, "Unpanelized parts", last_line_color='color:blue;')
 
     else:
         forms.alert("Congratulations! All parts have been panelized")

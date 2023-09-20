@@ -22,9 +22,9 @@ from _create import _transactions as a
 from _create import _errorhandler as eh
 from _create import _forms as f
 import clr
+
 clr.AddReference("System")
 from pyrevit import forms
-
 
 # VARIABLES
 app = __revit__.Application  # represents the Revit Autodesk Application
@@ -40,23 +40,28 @@ active_level = doc.ActiveView.GenLevel
 def main():
     try:
         part = g.select_part()
-        switch_option = f.switch_option()
-        displacement_distance = f.displacement_distance_form()
+        # switch direction of panelization
+        switch_option = f.form_switch_panelization_direction()
+        displacement_distance = f.form_displacement_distance()
+        a.auto_parts(__title__, part, displacement_distance, switch_option, multiple=True)
 
-        a.auto_parts(__title__, part, displacement_distance,switch_option, multiple=True)
-    except eh.CannotPanelizeError:
-        forms.alert('Select a Part to Panelize')
-    except eh.CannotSplitPanelError:
+    except eh.RevealNotCreatedError:
+        forms.alert('Reveal at coordinate 0 could not be created')
+
+    except eh.CentreIndexError:
         forms.alert("Centre Index could not be established")
+
     except eh.VariableDistanceNotFoundError:
         forms.alert("The variable distance could not be established")
 
-    except eh.TransactionError:
-        forms.alert("Transaction Error occurred")
+    except eh.XYAxisPlaneNotEstablishedError:
+        forms.alert('Could not Panelize. Selected Part not on X or Y axis')
 
-    except Exception:
-        forms.alert("Error occurred.Could not panelize selected Part.")
+    except eh.DeleteElementsError:
+        forms.alert('Error occurred. Could not delete reveals')
 
+    """except Exception:
+        forms.alert("Error occurred.Could not panelize selected Part.")"""
 
 
 if __name__ == "__main__":

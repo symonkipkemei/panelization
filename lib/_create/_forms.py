@@ -33,17 +33,24 @@ uidoc = __revit__.ActiveUIDocument  # obj that represent the current active proj
 # ________________________________________________________________________________________________
 
 
-def display_form(data, header, table_name, last_line_color='color:red;'):
+def form_display_table(data, header, table_name, last_line_color='color:red;'):
+    """
+    Display takeoff table
+    :param data: data to be displayed
+    :param header: header
+    :param table_name: table name
+    :param last_line_color: Last line color
+    :return: None
+    """
     output = script.get_output()
     output.center()
     output.add_style('body { color: blue; }')
     output.make_bar_chart(version=None)
-    tt = output.print_table(table_data=data, title=table_name, columns=header, last_line_style=last_line_color)
-
-    # 'color:red;'
+    output.print_table(table_data=data, title=table_name, columns=header, last_line_style=last_line_color)
 
 
-def single_digit_value():
+
+def form_estimated_cost():
     while True:
         cost_per_sf = forms.ask_for_string(default='0', prompt='Enter estimated cost per square feet (USD):',
                                            title='Panel Material take off')
@@ -57,7 +64,12 @@ def single_digit_value():
     return cost_per_sf
 
 
-def displacement_distance_form():
+def form_displacement_distance():
+    """
+    User input form for selecting distance from edge of openings parameter
+
+    :return:float option
+    """
     while True:
         d_distance = forms.ask_for_string(default='0.5', prompt='Enter displacement distance from edges of openings:',
                                           title='Panelization')
@@ -71,7 +83,12 @@ def displacement_distance_form():
     return float(d_distance)
 
 
-def select_part_type():
+def form_select_part_type():
+    """
+    User input form for selecting parts for take off
+    :return: String Option
+    """
+
     # user sets cost per m2 and selects which pane to establish cost
     ops = ['External Parts', 'Internal Parts', 'External and Internal Parts']
     user_choice = forms.SelectFromList.show(ops, button_name='Select Option',
@@ -80,7 +97,11 @@ def select_part_type():
     return user_choice
 
 
-def switch_option():
+def form_switch_panelization_direction():
+    '''
+    User input form for switching panelization direction
+    :return: Bool option
+    '''
     ans = forms.ask_for_one_item(['L to R', 'R to L'], default='L to R', prompt='(L)eft to (R)ight [default]  or  (R)ight to (L)eft :',
                            title='Panelization Direction')
     if ans == "L to R":

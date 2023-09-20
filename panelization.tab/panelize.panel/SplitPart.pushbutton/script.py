@@ -47,10 +47,14 @@ def main():
 
     except eh.VariableDistanceNotFoundError:
         forms.alert("The variable distance could not be established")
-
+    except eh.RevealNotCreatedError:
+        forms.alert('Reveal at coordinate 0 could not be created')
+    except eh.DeleteElementsError:
+        forms.alert('Error occurred. Could not delete reveals')
+    except eh.XYAxisPlaneNotEstablishedError:
+        forms.alert('Could not Panelize. Selected Part not on X or Y axis')
     except Exception:
-        forms.alert("Error occurred.Could not panelize")
-
+        forms.alert("Error occurred.Could not split part")
 
 if __name__ == "__main__":
     main()

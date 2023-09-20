@@ -278,15 +278,17 @@ def get_reveal_indexes(left_edge, right_edge, out_ranges, exterior=True):
 
     # determine reveals required to panelize part
     while True:
+        reveal_edge_width = 0.078125  # subtracted 15/16"from panel to allow it cut at 2'
         if exterior:  # panelization is left to right, the left edge reduces towards the right edge
             left_edge -= panelling_distance
             # skipping the out range if there is a window
             left_edge = o.check_out_range(left_edge, out_ranges, exterior=True)
-            # remaining length established, will determine when panelization is complete ( < 4 script breaks)
-            reveal_edge_width = 0.078125
-            rem_length = left_edge - (right_edge - reveal_edge_width)
+
             # the new left edge appended to the list
             reveal_indexes.append(left_edge)
+
+            # remaining length established,this will determine when panelization is complete ( < 4 script breaks)
+            rem_length = left_edge - (right_edge - reveal_edge_width)
 
             if rem_length < 4.0000:
                 if rem_length < minimum_panel:
@@ -299,7 +301,6 @@ def get_reveal_indexes(left_edge, right_edge, out_ranges, exterior=True):
                     # the part left behind is determined
                     part_left_behind = left_edge - right_edge
                     # determine the remainder left edge position
-                    reveal_edge_width = 0.078125  # subtracted 15/16"from panel to allow it cut at 2'
                     # what remains after setting aside minimum panel
                     rem = part_left_behind - (minimum_panel - reveal_edge_width)
                     # position the new left edge
@@ -314,8 +315,12 @@ def get_reveal_indexes(left_edge, right_edge, out_ranges, exterior=True):
             right_edge += panelling_distance  # panelization is right to left, the right edge increases towards the left edge
             # skipping the out range if there is a window
             right_edge = o.check_out_range(right_edge, out_ranges, exterior=False)
-            rem_length = left_edge - right_edge
+
             reveal_indexes.append(right_edge)
+
+            # reveal edge width subtracted from the right edge , to factor a 4' panel
+            rem_length = left_edge - (right_edge - reveal_edge_width)
+
             if rem_length < 4.0000:
                 if rem_length < minimum_panel:
                     # remove the last record on list to allow for further splitting
@@ -323,7 +328,6 @@ def get_reveal_indexes(left_edge, right_edge, out_ranges, exterior=True):
                     if len(reveal_indexes) != 0:
                         right_edge = reveal_indexes[-1]  # the right edge becomes the last item on list
                     part_left_behind = left_edge - right_edge
-                    reveal_edge_width = 0.078125  # subtracted from panel to allow it cut at 2'
                     rem = part_left_behind - (minimum_panel - reveal_edge_width)
                     right_edge += rem
                     reveal_indexes.append(right_edge)

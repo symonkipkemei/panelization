@@ -47,8 +47,8 @@ def main():
     underpanelized, panalized, non_panelized_parts = g.sort_parts_by_length(all_parts)
 
     if len(non_panelized_parts) != 0:
-        switch_option = f.switch_option()
-        displacement_distance = f.displacement_distance_form()
+        switch_option = f.form_switch_panelization_direction()
+        displacement_distance = f.form_displacement_distance()
         for part in non_panelized_parts:
             try:
                 a.auto_parts(__title__, part, displacement_distance, switch_option, multiple=True)

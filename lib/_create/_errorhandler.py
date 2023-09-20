@@ -32,30 +32,40 @@ class WarningSwallower(IFailuresPreprocessor):
         return FailureProcessingResult.Continue
 
 
-# catch instances where parts are less than 4'
-class CannotPanelizeError(Exception):
+class CentreIndexError(Exception):
+    """
+    Catch error: Centre index of the part could not be established correctly
+    """
     pass
 
 
-# Cannot split the panel into equal parts
-class CannotSplitPanelError(Exception):
-    pass
-
-
-# catch variable distance cannot  be found
+# catch variable distance cannot be found
 class VariableDistanceNotFoundError(Exception):
+    """
+    Catch error: variable distance cannot be found
+    """
     pass
 
 
 # catch reveal not selected error
-class RevealNotSelectedError(Exception):
+class RevealNotCreatedError(Exception):
+    """
+    Catch error: reveal not selected error
+    """
     pass
 
 
-# catch elements that are Null in value
-class NoneError(Exception):
+# Error occured deleteing elements
+class DeleteElementsError(Exception):
+    """
+    Catch error: reveal not selected error
+    """
     pass
 
-# catches walls that are non-othogonal
-class TransactionError(Exception):
+# catch instances where parts/walls are not along a x or y axis
+class XYAxisPlaneNotEstablishedError(Exception):
+    """
+    Catch error: parts/walls are not along a X or Y axis
+    """
     pass
+

@@ -338,24 +338,7 @@ def get_reveal_indexes(left_edge, right_edge, out_ranges, exterior=True):
     return reveal_indexes
 
 
-def get_single_panel_reveal_indexes(left_edge, right_edge, exterior=True):
-    """Determine the position of a reveal index for a single panel
-    :param exterior: if part exterior or not
-    :param left_edge:left edge reveal index
-    :param right_edge:right edge reveal index
-    :return: reveal index position to form a panel
-    """
-    panel_size = 3.927083
-    reveal_indexes = []
-    if exterior:
-        new_reveal_distance = left_edge - panel_size
-        reveal_indexes.append(new_reveal_distance)
 
-    else:
-        new_reveal_distance = right_edge + panel_size
-        reveal_indexes.append(new_reveal_distance)
-
-    return reveal_indexes
 
 
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> SORT FUNCTIONS
@@ -452,45 +435,3 @@ def switch_directions(exterior, switch_direction=False):
     return exterior
 
 
-# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> HIGHLIGHT FUNCTIONS
-
-def highlight_unpanelized_underpanelized_parts(__title__):
-    """Color code unpanelized parts and underpanleized parts for ease of identification
-    :param __title__:
-    :return: graphics_settings_unpanelized, graphics_settings_underpanelized
-    """
-
-    # select all parts
-    parts = select_all_parts()
-    exterior_parts, interior_parts = sort_parts_by_side(parts)
-    filtered_parts = exterior_parts + interior_parts
-    underpanalized, panelized, unpanelized = sort_parts_by_length(filtered_parts)
-
-    solid_fill_id = ElementId(20)
-
-    # color codes - unpanelized
-    graphics_settings_unpanelized = OverrideGraphicSettings()
-    graphics_settings_unpanelized.SetSurfaceForegroundPatternId(solid_fill_id)
-    clr_bytes_a = [255, 99, 71]
-    color_unpanelized_a = Color(clr_bytes_a[0], clr_bytes_a[1], clr_bytes_a[2])
-    graphics_settings_unpanelized.SetSurfaceForegroundPatternColor(color_unpanelized_a)
-
-    # color codes - underpanelized
-    graphics_settings_underpanelized = OverrideGraphicSettings()
-    graphics_settings_underpanelized.SetSurfaceForegroundPatternId(solid_fill_id)
-    clr_bytes_b = [251, 191, 0]
-    color_underpanelized_b = Color(clr_bytes_b[0], clr_bytes_b[1], clr_bytes_b[2])
-    graphics_settings_underpanelized.SetSurfaceForegroundPatternColor(color_underpanelized_b)
-
-    with Transaction(doc, __title__) as t:
-        t.Start()
-        if len(unpanelized) != 0:
-            for part in unpanelized:
-                active_view.SetElementOverrides(part.Id, graphics_settings_unpanelized)
-        if len(underpanalized) != 0:
-            for part in underpanalized:
-                active_view.SetElementOverrides(part.Id, graphics_settings_underpanelized)
-
-        t.Commit()
-
-    return graphics_settings_unpanelized, graphics_settings_underpanelized

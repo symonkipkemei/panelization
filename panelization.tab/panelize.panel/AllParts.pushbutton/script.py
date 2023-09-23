@@ -2,7 +2,7 @@ from __future__ import division
 
 # METADATA
 
-__title__ = "AutoParts"
+__title__ = "AllParts"
 
 __doc__ = """
 Auto select all parts and panelize
@@ -55,7 +55,7 @@ def main():
             except Exception:
                 pass
 
-        g.highlight_unpanelized_underpanelized_parts(__title__)
+        a.highlight_unpanelized_underpanelized_parts(__title__)
 
     else:
         forms.alert("There are no non-panelized parts")

@@ -60,8 +60,8 @@ def main():
     except eh.DeleteElementsError:
         forms.alert('Error occurred. Could not delete reveals')
 
-    """except Exception:
-        forms.alert("Error occurred.Could not panelize selected Part.")"""
+   #except Exception:
+        #forms.alert("Error occurred.Could not panelize selected Part.")
 
 
 if __name__ == "__main__":

@@ -87,7 +87,7 @@ def main():
     if len(parts) != 0:
         parts_data = get_unpanalized_parts_data(parts)
 
-        g.highlight_unpanelized_underpanelized_parts(__title__)
+        a.highlight_unpanelized_underpanelized_parts(__title__)
 
         # display panels data
         header = ["COUNT", "PART ID", "HEIGHT(F)", "LENGTH(F)", "BASE LEVEL"]

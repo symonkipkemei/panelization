@@ -167,12 +167,11 @@ def main():
         f.form_display_table(final_data, header, "Parts Material Takeoff" + "-" + user_choice)
 
         if len(unpanalized) != 0:
-            g.highlight_unpanelized_underpanelized_parts(__title__)
+            a.highlight_unpanelized_underpanelized_parts(__title__)
             forms.alert("Highlighted parts (red) have not been panelized")
 
         else:
             forms.alert("CongratuLations! All parts have been panelized")
-
 
     else:
         g.highlight_unpanelized_underpanelized_parts(__title__)

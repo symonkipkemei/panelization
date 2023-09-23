@@ -44,8 +44,11 @@ active_level = doc.ActiveView.GenLevel
 import clr
 
 
-# a class to filter selections to reveals only
 class RevealSelectionFilter(ISelectionFilter):
+    """
+    a class to filter selections to reveals only
+    """
+
     def AllowElement(self, element):
         if element.Category.Name == "Reveals":
             return True
@@ -59,7 +62,7 @@ class RevealSelectionFilter(ISelectionFilter):
 def select_reveal():
     """
     Selects a reveal
-    :return:
+    :return:A reveal
     """
     reveal_filter = RevealSelectionFilter()
     reference = uidoc.Selection.PickObject(ObjectType.Element, reveal_filter)
@@ -102,7 +105,7 @@ def get_host_wall_id(reveal):
 def select_all_reveals():
     """
     Select all reveals in a project
-    :return:
+    :return: Collection of all reveals
     """
     all_reveals = FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_Reveals). \
         WhereElementIsNotElementType().ToElements()
@@ -141,7 +144,7 @@ def main():
     reference_host_id = get_host_wall_id(reveal)
     reference_wall_side = get_wall_side(reveal)
     all_reveals = select_all_reveals()
-    filtered_reveals = get_filtered_reveals(reference_host_id, reference_wall_side,all_reveals)
+    filtered_reveals = get_filtered_reveals(reference_host_id, reference_wall_side, all_reveals)
 
     # Create a C# List[int] and add the Python list elements to it
     filtered_reveals_collection = List[ElementId](filtered_reveals)

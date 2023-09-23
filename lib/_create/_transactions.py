@@ -17,6 +17,7 @@ from _create import _coordinate as c
 from _create import _errorhandler as eh
 from _create import _forms as ff
 
+
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> VARIABLES
 
 app = __revit__.Application  # represents the Revit Autodesk Application
@@ -245,10 +246,10 @@ def highlight_unpanelized_underpanelized_parts(__title__):
     """
 
     # select all parts
-    parts = select_all_parts()
-    exterior_parts, interior_parts = sort_parts_by_side(parts)
+    parts = p.select_all_parts()
+    exterior_parts, interior_parts = p.sort_parts_by_side(parts)
     filtered_parts = exterior_parts + interior_parts
-    underpanalized, panelized, unpanelized = sort_parts_by_length(filtered_parts)
+    underpanalized, panelized, unpanelized = p.sort_parts_by_length(filtered_parts)
 
     solid_fill_id = ElementId(20)
 

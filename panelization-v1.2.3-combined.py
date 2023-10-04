@@ -373,7 +373,7 @@ class ThisApplication(ApplicationEntryPoint):
         :param host_wall_type_id: Element Id for the host wall type
         :return: lap_type_id, side_of_wall, exterior
         """
-  
+
         left_lap_id = ElementId(352818)
         right_lap_id = ElementId(352808)
 
@@ -425,7 +425,7 @@ class ThisApplication(ApplicationEntryPoint):
     def get_part_centre_index(self, doc, part, reveal_plane_coordinate_0):
         """
         Determine the centre index of the panel
-        :param doc: 
+        :param doc:
         :param part: Part to be panelized
         :param reveal_plane_coordinate_0: coordinates of reveal at 0
         :return: part centre index
@@ -987,9 +987,10 @@ class ThisApplication(ApplicationEntryPoint):
     # Delete reveal warning dialog boxes
     class WarningSwallower(IFailuresPreprocessor):
         """
-        Suppresses all warning dialog boxes by deleting them . Cannot delete Errors. 
+        Suppresses all warning dialog boxes by deleting them . Cannot delete Errors.
         Errors have to be addressed by the user
         """
+
         def PreprocessFailures(self, failuresAccessor):
 
             # Inside event handler, get all warnings
@@ -1231,7 +1232,7 @@ class ThisApplication(ApplicationEntryPoint):
     def delete_element(self, doc, *args):
         """
         Delete a single/many element in revit
-        :param doc: 
+        :param doc:
         :param args: Collection of Element Ids to be deleted
         :return: None
         """
@@ -1331,7 +1332,7 @@ class ThisApplication(ApplicationEntryPoint):
             TaskDialog.Show("Info", "There are no non-panelized parts")
 
     def panelize_multiParts(self):
-        """Allows the user to select parts to be panelized, If a part bears an error, a dialog box is shown and 
+        """Allows the user to select parts to be panelized, If a part bears an error, a dialog box is shown and
         the part is skipped. If the error is exceptionally not captured, the part will be skipped without displaying
         a dialog box"""
 
@@ -1366,7 +1367,7 @@ class ThisApplication(ApplicationEntryPoint):
 
     def panelize_singlePart(self):
         """
-        Allows the user to select a part. If a part bears an error, a dialog box is shown and 
+        Allows the user to select a part. If a part bears an error, a dialog box is shown and
         error displayed. If the part cannot be panelized, the user should resort to the manual panelization process
         """
         uidoc = self.ActiveUIDocument
@@ -1406,7 +1407,7 @@ class ThisApplication(ApplicationEntryPoint):
 
     def panelize_splitPart(self):
         """Allows user to split a part into two equal parts infinitely"""
-  
+
         doc = self.ActiveUIDocument.Document
         uidoc = self.ActiveUIDocument
 
@@ -1451,7 +1452,7 @@ class ThisApplication(ApplicationEntryPoint):
         self.display_selected_reveals(uidoc, filtered_reveals_collection)
 
     def takeoff_unpanelizedParts(self):
-        """ Abstract how many parts have not been panelized. 
+        """ Abstract how many parts have not been panelized.
         Unpanelized parts will be highlighted for further intervention"""
 
         doc = self.ActiveUIDocument.Document
